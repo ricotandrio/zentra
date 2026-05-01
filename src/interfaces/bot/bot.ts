@@ -72,7 +72,7 @@ export const startBot = async (
   botToken: string,
   clientId: string,
   guildId: string,
-  // standupChannelId: string,
+  standupChannelId: string,
   logger: Logger
 ) => {
   const client = new Client({
