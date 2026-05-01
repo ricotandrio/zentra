@@ -4,7 +4,6 @@ import { Ticker } from '@/domain/entities/ticker.entity';
 import { getLogger } from '@/shared/logger';
 import { WorkerWebhookPayload } from '@/application/dto/market-results.dto';
 
-// Import mocks directly from JSON files
 import singleTickerRequest from '../../../mocks/worker/market-analysis-single-request.json';
 import multipleTickersRequest from '../../../mocks/worker/market-analysis-multiple-request.json';
 import webhookSuccessResponse from '../../../mocks/worker/webhook-success-response.json';
@@ -19,7 +18,6 @@ describe('Worker Integration Tests', () => {
   });
 
   beforeEach(() => {
-    // Mock fetch globally
     mockFetch = jest.fn();
     global.fetch = mockFetch;
   });
@@ -30,7 +28,6 @@ describe('Worker Integration Tests', () => {
 
   describe('MarketAnalysisJob Integration', () => {
     it('should construct job with correct configuration', () => {
-      // Arrange
       const mockRepository = {
         add: jest.fn(),
         getAll: jest.fn(),
@@ -38,7 +35,6 @@ describe('Worker Integration Tests', () => {
         remove: jest.fn(),
       };
 
-      // Act
       const job = new MarketAnalysisJob({
         logger,
         tickerRepository: mockRepository,
@@ -46,12 +42,10 @@ describe('Worker Integration Tests', () => {
         webhookUrl: 'http://localhost:3000/webhooks/market-results',
       });
 
-      // Assert - should not throw
       expect(job).toBeDefined();
     });
 
     it('should handle execution with mocked repository and webhook', async () => {
-      // Arrange
       const mockTickers = [
         Ticker.create(multipleTickersRequest[0].symbol, multipleTickersRequest[0].name),
         Ticker.create(multipleTickersRequest[1].symbol, multipleTickersRequest[1].name),

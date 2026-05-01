@@ -4,11 +4,33 @@ import { Logger } from 'pino';
 import { ProcessMarketAnalysisResultsUseCase } from '@/application/use-cases/ticker/process-market-results.usecase';
 import { WorkerWebhookPayload } from '@/application/dto/market-results.dto';
 
+export const triggerWorker = (
+  logger: Logger
+) => {
+  return async (req: Request, res: Response): Promise<void> => {
+    try {
+      logger.info({ endpoint: '/workers/market-analysis' }, 'Triggering market analysis worker');
+      // Here you would trigger your background worker, e.g. by sending a message to a queue or invoking a serverless function
+      // For demonstration, we'll just return a success response
+      res.status(200).json({
+        success: true,
+        message: 'Market analysis worker triggered',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(error, 'Error triggering market analysis worker');
+      res.status(500).json({
+        error: message,
+      });
+    }
+  };
+};
+
 /**
  * Market Results Controller
  * Receives webhook payloads from worker and delivers to Discord
  */
-export const marketResultsController = (
+export const deliverMarketResults = (
   discordClient: DiscordClient,
   logger: Logger
 ) => {

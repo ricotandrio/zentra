@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { Client as DiscordClient } from 'discord.js';
 import { Logger } from 'pino';
-import { marketResultsController } from '../controllers/market-results.controller';
+import { deliverMarketResults } from '../controllers/market-analysis.controller';
 
 export const createWebhookRoutes = (
   discordClient: DiscordClient,
@@ -21,7 +21,7 @@ export const createWebhookRoutes = (
    *   channelId: "123456789"
    * }
    */
-  router.post('/market-results', marketResultsController(discordClient, logger));
+  router.post('/market-results', deliverMarketResults(discordClient, logger));
 
   return router;
 };

@@ -7,7 +7,7 @@ import { MarketAnalysisScheduler } from '@/interfaces/worker/schedulers/market-a
 const logger = getLogger();
 
 const marketSummaryChannelId = env.DISCORD.DISCORD_STANDUP_CHANNEL_ID;
-const webhookUrl = process.env.MARKET_ANALYSIS_WEBHOOK_URL;
+const webhookUrl = env.WEBHOOK_BASE_URL + '/webhooks/market-results';
 
 if (!marketSummaryChannelId) {
   logger.error('Missing DISCORD_STANDUP_CHANNEL_ID environment variable');
@@ -15,8 +15,7 @@ if (!marketSummaryChannelId) {
 }
 
 if (!webhookUrl) {
-  logger.error('Missing MARKET_ANALYSIS_WEBHOOK_URL environment variable');
-  logger.error('Example: http://localhost:3000/webhooks/market-results');
+  logger.error('Missing WEBHOOK_BASE_URL environment variable');
   process.exit(1);
 }
 

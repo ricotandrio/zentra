@@ -1,25 +1,22 @@
-import express, { Express, Request, Response } from 'express';
+import express, { Express } from 'express';
 import { Client as DiscordClient } from 'discord.js';
 import { Logger } from 'pino';
 import { createWebhookRoutes } from './routes/webhooks';
+import { createHealthRoutes } from './routes/health';
+import { createWorkerRoutes } from './routes/workers';
 
 export const createExpressApp = (
   logger: Logger,
   discordClient?: DiscordClient
 ): Express => {
   const app = express();
-
   app.use(express.json());
 
-  app.get('/ping', (req: Request, res: Response) => {
-    logger.info({ endpoint: '/ping' }, 'Ping endpoint called');
-    res.json({ message: 'pong' });
-  });
+  app.use(createHealthRoutes(logger));
+  app.use('/workers', createWorkerRoutes(logger));
 
-  // Register webhook routes if Discord client is available
   if (discordClient) {
-    const webhookRoutes = createWebhookRoutes(discordClient, logger);
-    app.use('/webhooks', webhookRoutes);
+    app.use('/webhooks', createWebhookRoutes(discordClient, logger));
     logger.info('Webhook routes registered');
   } else {
     logger.warn('Discord client not available - webhook routes disabled');
