@@ -1,4 +1,4 @@
-name: tests
+name: integration-tests
 
 on:
   push:
@@ -10,6 +10,7 @@ on:
 
 jobs:
   test:
+    name: Run Integration Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -26,7 +27,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test -- --coverage --watchAll=false
+        run: npm run test:integration
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
