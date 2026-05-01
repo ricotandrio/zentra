@@ -11,12 +11,14 @@ Zentra is a **TypeScript modular monolith** built with **Clean Architecture**.
 
 It supports:
 
-- Discord bot interactions via natural language (LLM-routed)
-- HTTP API
-- Background worker jobs (market summary)
+- Discord bot interactions via natural language (LLM-routed) and slash commands
+- HTTP API with webhook endpoints
+- Ticker subscriptions with SQLite persistence
+- Background worker jobs (market analysis with webhook delivery)
+- Webhook-based result delivery (worker → API → Discord)
 - LLM-based orchestration
 - GitHub integration (issue creation & PR notifications)
-- Yahoo Finance market data
+- Yahoo Finance market data with sentiment analysis
 
 ---
 
@@ -74,8 +76,10 @@ Pure business rules. No framework, no I/O, no external knowledge.
 
 ```
 domain/
-├── entities/         # Core models (User, Issue, Repository)
+├── entities/         # Core models (User, Issue, Repository, Ticker)
+│   └── ticker.entity.ts
 ├── repositories/     # Repository interfaces (contracts only)
+│   └── ticker.repository.ts
 ├── services/         # Domain services
 ├── events/           # Domain events
 ├── value-objects/    # Immutable value types
@@ -99,13 +103,17 @@ Use cases and orchestration. Coordinates domain logic and calls infrastructure v
 ```
 application/
 ├── use-cases/        # Feature flows
-│   ├── issue/        # GitHub issue creation (triggered by bot)
-│   ├── trading/      # Market summary (triggered by worker)
+│   ├── issue/        # GitHub issue creation
+│   ├── trading/      # Market summary
+│   ├── ticker/       # Ticker management & market analysis
+│   │   ├── add-ticker.usecase.ts
+│   │   ├── get-subscribed-tickers.usecase.ts
+│   │   ├── analyze-market.usecase.ts
+│   │   └── process-market-results.usecase.ts
 │   └── user/
 ├── contracts/        # Abstractions for unstable dependencies
-│   ├── llm.contract.ts
-│   └── market.contract.ts
 ├── dto/              # Data transfer objects
+│   └── market-results.dto.ts
 └── orchestrators/    # LLM intent routing → use case dispatch
 ```
 
@@ -134,11 +142,15 @@ All external implementations. Adapts third-party services for the app.
 ```
 infrastructure/
 ├── persistence/
-│   └── db/           # Implements domain repositories (no business logic)
+│   └── db/           # Implements domain repositories
+│       ├── database.ts
+│       └── sqlite-ticker.repository.ts
 ├── external/
 │   ├── github/
-│   ├── llm/          # Implements LlmContract
-│   ├── yahoo/        # Implements MarketContract
+│   ├── llm/
+│   ├── yahoo/        # Market data (NEW enhanced)
+│   │   ├── yahoo.adapter.ts
+│   │   └── yahoo.types.ts
 │   └── terminal/
 ├── analytics/
 ├── queue/
@@ -160,33 +172,50 @@ System entrypoints. Parse inputs, call use cases, return outputs. No business lo
 ```
 interfaces/
 ├── bot/
-│   ├── handlers/         # Natural language message handler (no slash commands)
-│   ├── presenters/       # Format and send Discord responses
-│   └── services/         # Bot-scoped helpers
+│   ├── commands/          # Slash commands
+│   │   ├── add-ticker.command.ts
+│   │   ├── list-tickers.command.ts
+│   │   ├── market-summary.command.ts
+│   │   └── ping.command.ts
+│   ├── handlers/          # Natural language messages
+│   └── bot.ts
 ├── api/
 │   ├── routes/
+│   │   └── webhooks.ts
 │   ├── controllers/
-│   └── presenters/
+│   │   └── market-results.controller.ts
+│   └── app.ts
 └── worker/
     ├── jobs/
-    │   └── market-summary.job.ts   # Only active job
+    │   └── market-analysis.job.ts
     ├── schedulers/
+    │   └── market-analysis.scheduler.ts
     └── handlers/
 ```
 
-**Bot** accepts natural language messages only — no slash command handlers.
+**Bot** accepts natural language messages AND slash commands:
+- ✅ Slash commands for ticker management: `/add-ticker`, `/list-tickers`, `/market-summary`, `/ping`
+- ✅ Natural language routing via LLM orchestrator
 
-- The LLM orchestrator interprets user intent and routes to the correct use case
-- ✅ Bot may trigger: GitHub issue creation, GitHub PR notification (on PR open events)
-- ❌ No other GitHub operations allowed from the bot
-- ❌ No DB calls, no business logic
+- LLM orchestrator handles natural language intent routing
+- Slash commands call use cases directly
+- ✅ Bot operations: GitHub issues, PR notifications, ticker management, market analysis
+- ✅ Slash commands: `/add-ticker`, `/list-tickers`, `/market-summary`
+- ❌ No DB calls from handlers — all via use cases
+- ❌ No business logic in handlers
 
-**API** handles HTTP request/response only.
+**API** handles HTTP requests and webhook delivery:
+- ✅ REST endpoints for traditional operations
+- ✅ Webhook endpoint: `POST /webhooks/market-results`
+- ✅ Discord client integration for result delivery
+- ❌ No business logic in controllers
 
-**Worker** currently runs one job: market summary from Yahoo Finance.
-
-- Flow: `Cron → MarketSummaryJob → SummarizeMarketUseCase → Yahoo + LLM`
-- ❌ No direct business logic or DB access
+**Worker** runs scheduled market analysis jobs:
+- **Schedule:** Daily at 18 PM UTC (6 PM)
+- **Flow:** `Cron → MarketAnalysisJob → AnalyzeMarketUseCase → Yahoo Finance → HTTP POST webhook → API → Discord`
+- ✅ Reads tickers from SQLite database
+- ✅ Sends results via webhook (decoupled from Discord)
+- ❌ No business logic or direct DB writes
 
 ---
 
@@ -247,13 +276,22 @@ main.worker.ts
 Workers **must** reuse application use cases. Current active job:
 
 ```
-Cron Scheduler
+Cron Scheduler (Daily 18 PM UTC)
   ↓
-MarketSummaryJob             (interfaces/worker/jobs/market-summary.job.ts)
+MarketAnalysisJob            (read subscribed tickers)
   ↓
-SummarizeMarketUseCase       (application/use-cases/trading)
+AnalyzeMarketUseCase         (fetch Yahoo Finance data)
   ↓
-Yahoo Finance + LLM          (infrastructure/external)
+Sentiment Analysis           (process news articles)
+  ↓
+Create WorkerWebhookPayload
+  ↓
+HTTP POST to API webhook
+  ↓
+API ProcessMarketAnalysisResultsUseCase
+  ├─ Validate payload
+  ├─ Create Discord embeds
+  └─ Send to Discord channel
 ```
 
 **Rule:** Worker is not a standalone service. It shares the same app layer.
@@ -312,4 +350,45 @@ Goals:
 - Scalable structure
 - Reusable worker architecture
 
-**A new interface (e.g. CLI, webhook) should never require changes to `domain/` or `application/`.**
+**A new interface (e.g. CLI, HTTP) should never require changes to `domain/` or `application/`.**
+
+---
+
+## Webhook-Based Architecture
+
+Zentra uses webhooks for **decoupled result delivery**:
+
+```
+Worker                API                  Discord
+(analyzes)       (validates/formats)    (displays)
+    ↓                    ↓                   ↓
+Analyze tickers → POST webhook → Create embeds → Send to channel
+```
+
+**Benefits:**
+- Services operate independently
+- Easy horizontal scaling
+- Simple testing with curl
+- No Discord client in worker
+
+**Endpoint:** `POST /webhooks/market-results` → receives market analysis → sends to Discord
+
+---
+
+## Ticker Management
+
+**Domain:**
+- `Ticker` entity — validates `.JK` format (Jakarta Stock Exchange)
+- `ITickerRepository` interface
+
+**Storage:**
+- SQLite `tickers` table (global, non-user-specific)
+- Fields: symbol, name, added_at
+
+**Commands:**
+- `/add-ticker symbol:BBCA.JK name:Bank Central Asia` → AddTickerUseCase
+- `/list-tickers` → GetSubscribedTickersUseCase
+- `/market-summary` → AnalyzeMarketUseCase
+
+**Daily Job:**
+- 18 PM UTC: Worker reads all tickers → analyzes each → sends webhook to API

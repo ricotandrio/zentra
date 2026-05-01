@@ -30,13 +30,13 @@ export default [
           functions: 'never',
         },
       ],
-      'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_' },
       ],
       '@typescript-eslint/explicit-function-return-types': 'off',
       'eol-last': ['error', 'always'],
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ]

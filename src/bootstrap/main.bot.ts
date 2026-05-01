@@ -1,6 +1,8 @@
 import { env } from '@/config';
 import { getLogger } from '@/shared';
 import { startBot } from '@/interfaces/bot';
+import { initDatabase } from '@/infrastructure/persistence/db/database';
+import { SqliteTickerRepository } from '@/infrastructure/persistence/db/sqlite-ticker.repository';
 
 const logger = getLogger();
 
@@ -14,4 +16,8 @@ if (!botToken || !clientId || !guildId || !standupChannelId) {
   process.exit(1);
 }
 
-startBot(botToken, clientId, guildId, standupChannelId, logger);
+// Initialize database and repository
+const db = initDatabase();
+const tickerRepository = new SqliteTickerRepository(db);
+
+startBot(botToken, clientId, guildId, standupChannelId, logger, tickerRepository);

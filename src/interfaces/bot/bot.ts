@@ -2,15 +2,29 @@ import { AutocompleteInteraction, ChatInputCommandInteraction, Client, GatewayIn
 import { Logger } from 'pino';
 import { handleNaturalLanguageMessage } from './handlers';
 import * as ping from './commands';
+import * as addTicker from './commands/add-ticker.command';
+import * as listTickers from './commands/list-tickers.command';
+import * as marketSummary from './commands/market-summary.command';
+import { ITickerRepository } from '@/domain/repositories/ticker.repository';
 
-export interface BotCommand {
+export interface BotCommandWithDeps {
   data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder;
-  execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
+  execute: (
+    interaction: ChatInputCommandInteraction,
+    tickerRepository?: ITickerRepository
+  ) => Promise<void>;
   autocomplete?: (interaction: AutocompleteInteraction) => Promise<void>;
 }
 
-export const botCommands: Record<string, BotCommand> = {
-  ping,
+export interface BotCommand extends BotCommandWithDeps {
+  execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
+}
+
+export const botCommands: Record<string, BotCommandWithDeps> = {
+  ping: ping as BotCommand,
+  'add-ticker': addTicker as BotCommandWithDeps,
+  'list-tickers': listTickers as BotCommandWithDeps,
+  'market-summary': marketSummary as BotCommandWithDeps,
 };
 
 export const deployBot = async (
@@ -41,7 +55,11 @@ export const deployBot = async (
   }
 };
 
-const registerHandlers = (client: Client, logger: Logger) => {
+const registerHandlers = (
+  client: Client,
+  logger: Logger,
+  tickerRepository?: ITickerRepository
+) => {
   client.on('messageCreate', async (message) => {
     if (
       message.author.bot ||
@@ -59,6 +77,25 @@ const registerHandlers = (client: Client, logger: Logger) => {
     await handleNaturalLanguageMessage(message, logger);
   });
 
+  client.on('interactionCreate', async (interaction) => {
+    if (!interaction.isChatInputCommand()) return;
+
+    const command = botCommands[interaction.commandName];
+    if (!command) return;
+
+    try {
+      await command.execute(interaction, tickerRepository);
+    } catch (error) {
+      logger.error(error, `Error executing command: ${interaction.commandName}`);
+      const errorMessage = '❌ An unexpected error occurred while executing this command.';
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({ content: errorMessage, ephemeral: true });
+      } else {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    }
+  });
+
   client.once('ready', () => {
     logger.info(`Bot logged in as ${client.user?.tag}`);
   });
@@ -73,7 +110,8 @@ export const startBot = async (
   clientId: string,
   guildId: string,
   standupChannelId: string,
-  logger: Logger
+  logger: Logger,
+  tickerRepository?: ITickerRepository
 ) => {
   const client = new Client({
     intents: [
@@ -88,7 +126,7 @@ export const startBot = async (
 
   await deployBot(rest, clientId, guildId, logger);
 
-  registerHandlers(client, logger);
+  registerHandlers(client, logger, tickerRepository);
 
   await client.login(botToken);
   logger.info('Discord bot started');

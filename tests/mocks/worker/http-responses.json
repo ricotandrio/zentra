@@ -1,0 +1,25 @@
+{
+  "webhookSuccess": {
+    "ok": true,
+    "status": 200,
+    "body": {
+      "success": true,
+      "message": "Webhook received successfully"
+    }
+  },
+  "webhookServerError": {
+    "ok": false,
+    "status": 500,
+    "body": "Internal Server Error"
+  },
+  "webhookBadRequest": {
+    "ok": false,
+    "status": 400,
+    "body": "Bad Request"
+  },
+  "webhookUnauthorized": {
+    "ok": false,
+    "status": 401,
+    "body": "Unauthorized"
+  }
+}

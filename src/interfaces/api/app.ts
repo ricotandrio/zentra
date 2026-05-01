@@ -1,7 +1,12 @@
 import express, { Express, Request, Response } from 'express';
+import { Client as DiscordClient } from 'discord.js';
 import { Logger } from 'pino';
+import { createWebhookRoutes } from './routes/webhooks';
 
-export const createExpressApp = (logger: Logger): Express => {
+export const createExpressApp = (
+  logger: Logger,
+  discordClient?: DiscordClient
+): Express => {
   const app = express();
 
   app.use(express.json());
@@ -11,11 +16,24 @@ export const createExpressApp = (logger: Logger): Express => {
     res.json({ message: 'pong' });
   });
 
+  // Register webhook routes if Discord client is available
+  if (discordClient) {
+    const webhookRoutes = createWebhookRoutes(discordClient, logger);
+    app.use('/webhooks', webhookRoutes);
+    logger.info('Webhook routes registered');
+  } else {
+    logger.warn('Discord client not available - webhook routes disabled');
+  }
+
   return app;
 };
 
-export const startExpressApp = (port: number, logger: Logger) => {
-  const app = createExpressApp(logger);
+export const startExpressApp = (
+  port: number,
+  logger: Logger,
+  discordClient?: DiscordClient
+) => {
+  const app = createExpressApp(logger, discordClient);
 
   app.listen(port, () => {
     logger.info(`API server running on http://localhost:${port}`);
