@@ -18,7 +18,7 @@ export default [
       },
     },
     rules: {
-      semi: ['error', 'never'],
+      semi: ['error', 'always'],
       quotes: ['error', 'single', { avoidEscape: true }],
       'comma-dangle': [
         'error',

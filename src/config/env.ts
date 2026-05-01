@@ -1,8 +1,8 @@
 const requireEnv = (key: string): string => {
-  const value = process.env[key]
-  if (!value) throw new Error(`Missing environment variable: ${key}`)
-  return value
-}
+  const value = process.env[key];
+  if (!value) throw new Error(`Missing environment variable: ${key}`);
+  return value;
+};
 
 export const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
@@ -25,4 +25,4 @@ export const env = {
     OWNER: requireEnv('GITHUB_OWNER_USERNAME'),
     REPO: requireEnv('GITHUB_REPOSITORY_NAME'),
   },
-}
+};

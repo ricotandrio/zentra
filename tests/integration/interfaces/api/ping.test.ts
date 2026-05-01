@@ -1,24 +1,24 @@
-import request from 'supertest'
-import { createExpressApp } from '@/interfaces/api/app'
-import { getLogger } from '@/shared/logger'
+import request from 'supertest';
+import { createExpressApp } from '@/interfaces/api/app';
+import { getLogger } from '@/shared/logger';
 
 describe('GET /ping', () => {
   it('should return pong message', async () => {
-    const logger = getLogger()
-    const app = createExpressApp(logger)
+    const logger = getLogger();
+    const app = createExpressApp(logger);
 
-    const response = await request(app).get('/ping')
+    const response = await request(app).get('/ping');
 
-    expect(response.status).toBe(200)
-    expect(response.body).toEqual({ message: 'pong' })
-  })
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ message: 'pong' });
+  });
 
   it('should have correct content type', async () => {
-    const logger = getLogger()
-    const app = createExpressApp(logger)
+    const logger = getLogger();
+    const app = createExpressApp(logger);
 
-    const response = await request(app).get('/ping')
+    const response = await request(app).get('/ping');
 
-    expect(response.headers['content-type']).toContain('application/json')
-  })
-})
+    expect(response.headers['content-type']).toContain('application/json');
+  });
+});

@@ -1,6 +1,6 @@
-import pino, { Logger } from 'pino'
+import pino, { Logger } from 'pino';
 
-let loggerInstance: Logger
+let loggerInstance: Logger;
 
 const createLogger = (): Logger => {
   return pino(
@@ -15,12 +15,12 @@ const createLogger = (): Logger => {
         translateTime: 'SYS:standard',
       },
     })
-  )
-}
+  );
+};
 
 export const getLogger = (): Logger => {
   if (!loggerInstance) {
-    loggerInstance = createLogger()
+    loggerInstance = createLogger();
   }
-  return loggerInstance
-}
+  return loggerInstance;
+};

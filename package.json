@@ -9,10 +9,10 @@
   "scripts": {
     "prepare": "husky install",
     "dev:api": "dotenv -e .env -- tsx watch src/bootstrap/main.api.ts",
+    "dev:bot": "dotenv -e .env -- tsx watch src/bootstrap/main.bot.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src tests --max-warnings 0",
-    "format": "prettier --write src tests",
     "prettier:check": "prettier --check src tests",
     "prettier:fix": "prettier --write src tests"
   },
