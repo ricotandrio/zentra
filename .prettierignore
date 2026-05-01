@@ -1,0 +1,15 @@
+# Ignore everything except src/ and tests/
+*
+!src/
+!tests/
+!.prettierrc
+!.prettierignore
+!.gitignore
+
+# But still ignore these
+node_modules/
+dist/
+build/
+coverage/
+.next/
+out/
