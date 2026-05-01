@@ -3,10 +3,12 @@ import { MarketAnalysisScheduler } from '@/interfaces/worker/schedulers/market-a
 import { Ticker } from '@/domain/entities/ticker.entity';
 import { getLogger } from '@/shared/logger';
 import { WorkerWebhookPayload } from '@/application/dto/market-results.dto';
-import mocker from '../../../mocks/loader';
 
-// Load mocks from JSON files
-const mocks = mocker.loadWorkerMocks();
+// Import mocks directly from JSON files
+import singleTickerRequest from '../../../mocks/worker/market-analysis-single-request.json';
+import multipleTickersRequest from '../../../mocks/worker/market-analysis-multiple-request.json';
+import webhookSuccessResponse from '../../../mocks/worker/webhook-success-response.json';
+import webhookServerErrorResponse from '../../../mocks/worker/webhook-server-error-response.json';
 
 describe('Worker Integration Tests', () => {
   let mockFetch: jest.Mock;
@@ -51,8 +53,8 @@ describe('Worker Integration Tests', () => {
     it('should handle execution with mocked repository and webhook', async () => {
       // Arrange
       const mockTickers = [
-        Ticker.create(mocks.tickers.multiple[0].symbol, mocks.tickers.multiple[0].name),
-        Ticker.create(mocks.tickers.multiple[1].symbol, mocks.tickers.multiple[1].name),
+        Ticker.create(multipleTickersRequest[0].symbol, multipleTickersRequest[0].name),
+        Ticker.create(multipleTickersRequest[1].symbol, multipleTickersRequest[1].name),
       ];
 
       const mockRepository = {
@@ -63,9 +65,9 @@ describe('Worker Integration Tests', () => {
       };
 
       const mockResponse = {
-        ok: mocks.httpResponses.webhookSuccess.ok,
-        status: mocks.httpResponses.webhookSuccess.status,
-        json: jest.fn().mockResolvedValue(mocks.httpResponses.webhookSuccess.body),
+        ok: webhookSuccessResponse.ok,
+        status: webhookSuccessResponse.status,
+        json: jest.fn().mockResolvedValue(webhookSuccessResponse.body),
         text: jest.fn(),
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -143,7 +145,7 @@ describe('Worker Integration Tests', () => {
 
     it('should propagate webhook errors', async () => {
       // Arrange
-      const mockTickers = [Ticker.create(mocks.tickers.single.symbol, mocks.tickers.single.name)];
+      const mockTickers = [Ticker.create(singleTickerRequest.symbol, singleTickerRequest.name)];
 
       const mockRepository = {
         add: jest.fn(),
@@ -153,9 +155,9 @@ describe('Worker Integration Tests', () => {
       };
 
       const mockResponse = {
-        ok: mocks.httpResponses.webhookServerError.ok,
-        status: mocks.httpResponses.webhookServerError.status,
-        text: jest.fn().mockResolvedValue(mocks.httpResponses.webhookServerError.body),
+        ok: webhookServerErrorResponse.ok,
+        status: webhookServerErrorResponse.status,
+        text: jest.fn().mockResolvedValue(webhookServerErrorResponse.body),
       };
       mockFetch.mockResolvedValue(mockResponse);
 
@@ -173,8 +175,8 @@ describe('Worker Integration Tests', () => {
     it('should build correct webhook payload with ticker data', async () => {
       // Arrange
       const mockTickers = [
-        Ticker.create(mocks.tickers.multiple[0].symbol, mocks.tickers.multiple[0].name),
-        Ticker.create(mocks.tickers.multiple[1].symbol, mocks.tickers.multiple[1].name),
+        Ticker.create(multipleTickersRequest[0].symbol, multipleTickersRequest[0].name),
+        Ticker.create(multipleTickersRequest[1].symbol, multipleTickersRequest[1].name),
       ];
 
       const mockRepository = {
@@ -185,9 +187,9 @@ describe('Worker Integration Tests', () => {
       };
 
       mockFetch.mockResolvedValue({
-        ok: mocks.httpResponses.webhookSuccess.ok,
-        status: mocks.httpResponses.webhookSuccess.status,
-        json: jest.fn().mockResolvedValue(mocks.httpResponses.webhookSuccess.body),
+        ok: webhookSuccessResponse.ok,
+        status: webhookSuccessResponse.status,
+        json: jest.fn().mockResolvedValue(webhookSuccessResponse.body),
         text: jest.fn(),
       });
 
@@ -340,7 +342,7 @@ describe('Worker Integration Tests', () => {
   describe('Worker Job and Scheduler Integration', () => {
     it('should create job from scheduler configuration', async () => {
       // Arrange
-      const mockTickers = [Ticker.create(mocks.tickers.single.symbol, mocks.tickers.single.name)];
+      const mockTickers = [Ticker.create(singleTickerRequest.symbol, singleTickerRequest.name)];
       const mockRepository = {
         add: jest.fn(),
         getAll: jest.fn().mockResolvedValue(mockTickers),
@@ -349,9 +351,9 @@ describe('Worker Integration Tests', () => {
       };
 
       mockFetch.mockResolvedValue({
-        ok: mocks.httpResponses.webhookSuccess.ok,
-        status: mocks.httpResponses.webhookSuccess.status,
-        json: jest.fn().mockResolvedValue(mocks.httpResponses.webhookSuccess.body),
+        ok: webhookSuccessResponse.ok,
+        status: webhookSuccessResponse.status,
+        json: jest.fn().mockResolvedValue(webhookSuccessResponse.body),
         text: jest.fn(),
       });
 

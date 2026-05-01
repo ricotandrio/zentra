@@ -1,0 +1,44 @@
+{
+  "source": "market-analysis-job",
+  "timestamp": "2026-05-01T00:00:00Z",
+  "channelId": "test-channel",
+  "results": [
+    {
+      "ticker": "BBCA.JK",
+      "price": 7500,
+      "changePercent": 1.5,
+      "volume": 5000000,
+      "fiftyTwoWeekHigh": 8000,
+      "fiftyTwoWeekLow": 6500,
+      "news": [
+        {
+          "title": "Bank profit grows"
+        },
+        {
+          "title": "Strong performance"
+        },
+        {
+          "title": "Good outlook"
+        }
+      ],
+      "overallSentiment": 0.8
+    },
+    {
+      "ticker": "BMRI.JK",
+      "price": 5500,
+      "changePercent": -0.5,
+      "volume": 3000000,
+      "fiftyTwoWeekHigh": 6000,
+      "fiftyTwoWeekLow": 5000,
+      "news": [
+        {
+          "title": "Mixed results"
+        },
+        {
+          "title": "Market challenge"
+        }
+      ],
+      "overallSentiment": -0.2
+    }
+  ]
+}

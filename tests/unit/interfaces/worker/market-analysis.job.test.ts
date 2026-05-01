@@ -3,10 +3,14 @@ import { GetSubscribedTickersUseCase, AnalyzeMarketUseCase } from '@/application
 import { Ticker } from '@/domain/entities/ticker.entity';
 import { WorkerWebhookPayload } from '@/application/dto/market-results.dto';
 import { Logger } from 'pino';
-import mocker from '../../../mocks/loader';
 
-// Load mocks from JSON files
-const mocks = mocker.loadWorkerMocks();
+// Import mocks directly from JSON files
+import singleTickerRequest from '../../../mocks/worker/market-analysis-single-request.json';
+import multipleTickersRequest from '../../../mocks/worker/market-analysis-multiple-request.json';
+import singleAnalysisResponse from '../../../mocks/worker/market-analysis-single-response.json';
+import multipleAnalysisResponse from '../../../mocks/worker/market-analysis-single-response.json';
+import webhookSuccessResponse from '../../../mocks/worker/webhook-success-response.json';
+import webhookServerErrorResponse from '../../../mocks/worker/webhook-server-error-response.json';
 
 // Mock dependencies
 jest.mock('@/application/use-cases/ticker');
@@ -73,14 +77,14 @@ describe('MarketAnalysisJob', () => {
     it('should analyze tickers and send webhook', async () => {
       // Arrange
       const mockTickers = [
-        Ticker.create(mocks.tickers.multiple[0].symbol, mocks.tickers.multiple[0].name),
-        Ticker.create(mocks.tickers.multiple[1].symbol, mocks.tickers.multiple[1].name),
+        Ticker.create(multipleTickersRequest[0].symbol, multipleTickersRequest[0].name),
+        Ticker.create(multipleTickersRequest[1].symbol, multipleTickersRequest[1].name),
       ];
 
       const mockResponse = {
-        ok: mocks.httpResponses.webhookSuccess.ok,
-        status: mocks.httpResponses.webhookSuccess.status,
-        json: jest.fn().mockResolvedValue(mocks.httpResponses.webhookSuccess.body),
+        ok: webhookSuccessResponse.ok,
+        status: webhookSuccessResponse.status,
+        json: jest.fn().mockResolvedValue(webhookSuccessResponse.body),
         text: jest.fn(),
       };
 
@@ -89,7 +93,7 @@ describe('MarketAnalysisJob', () => {
         .mockResolvedValue(mockTickers);
       mockAnalyzeMarketUseCase.prototype.analyzeMultipleTickers = jest
         .fn()
-        .mockResolvedValue(mocks.marketAnalysisResponse.multiple);
+        .mockResolvedValue(multipleAnalysisResponse.multiple);
       mockFetch.mockResolvedValue(mockResponse);
 
       const job = new MarketAnalysisJob({
@@ -125,12 +129,12 @@ describe('MarketAnalysisJob', () => {
 
     it('should handle webhook errors', async () => {
       // Arrange
-      const mockTickers = [Ticker.create(mocks.tickers.single.symbol, mocks.tickers.single.name)];
+      const mockTickers = [Ticker.create(singleTickerRequest.symbol, singleTickerRequest.name)];
 
       const mockResponse = {
-        ok: mocks.httpResponses.webhookServerError.ok,
-        status: mocks.httpResponses.webhookServerError.status,
-        text: jest.fn().mockResolvedValue(mocks.httpResponses.webhookServerError.body),
+        ok: webhookServerErrorResponse.ok,
+        status: webhookServerErrorResponse.status,
+        text: jest.fn().mockResolvedValue(webhookServerErrorResponse.body),
       };
 
       mockGetSubscribedTickersUseCase.prototype.execute = jest
@@ -138,7 +142,7 @@ describe('MarketAnalysisJob', () => {
         .mockResolvedValue(mockTickers);
       mockAnalyzeMarketUseCase.prototype.analyzeMultipleTickers = jest
         .fn()
-        .mockResolvedValue(mocks.marketAnalysisResponse.single);
+        .mockResolvedValue(singleAnalysisResponse.single);
       mockFetch.mockResolvedValue(mockResponse);
 
       const job = new MarketAnalysisJob({
@@ -179,12 +183,12 @@ describe('MarketAnalysisJob', () => {
 
     it('should create correct webhook payload structure', async () => {
       // Arrange
-      const mockTickers = [Ticker.create(mocks.tickers.single.symbol, mocks.tickers.single.name)];
+      const mockTickers = [Ticker.create(singleTickerRequest.symbol, singleTickerRequest.name)];
 
       const mockResponse = {
-        ok: mocks.httpResponses.webhookSuccess.ok,
-        status: mocks.httpResponses.webhookSuccess.status,
-        json: jest.fn().mockResolvedValue(mocks.httpResponses.webhookSuccess.body),
+        ok: webhookSuccessResponse.ok,
+        status: webhookSuccessResponse.status,
+        json: jest.fn().mockResolvedValue(webhookSuccessResponse.body),
         text: jest.fn(),
       };
 
@@ -193,7 +197,7 @@ describe('MarketAnalysisJob', () => {
         .mockResolvedValue(mockTickers);
       mockAnalyzeMarketUseCase.prototype.analyzeMultipleTickers = jest
         .fn()
-        .mockResolvedValue(mocks.marketAnalysisResponse.single);
+        .mockResolvedValue(singleAnalysisResponse.single);
       mockFetch.mockResolvedValue(mockResponse);
 
       const job = new MarketAnalysisJob({
