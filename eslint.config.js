@@ -36,6 +36,7 @@ export default [
         { argsIgnorePattern: '^_' },
       ],
       '@typescript-eslint/explicit-function-return-types': 'off',
+      'eol-last': ['error', 'always'],
     },
   },
 ]
