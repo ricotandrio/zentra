@@ -1,5 +1,5 @@
 import { env } from '@/config'
-import { startExpressApp } from '@/interfaces/api/app'
+import { startExpressApp } from '@/interfaces/api'
 import { getLogger } from '@/shared/logger'
 
 const logger = getLogger()

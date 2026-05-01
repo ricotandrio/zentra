@@ -42,6 +42,7 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
+    "discord.js": "^14.26.3",
     "express": "^5.2.1",
     "pino": "^8.17.2",
     "pino-pretty": "^10.3.1",
