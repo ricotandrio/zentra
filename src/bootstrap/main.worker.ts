@@ -3,7 +3,7 @@ import { getLogger } from '@/shared';
 import { initializeEventBus } from '@/shared/event-bus';
 import { initDatabase } from '@/infrastructure/persistence/db/database';
 import { SqliteTickerRepository } from '@/infrastructure/persistence/db/sqlite-ticker.repository';
-import { MarketAnalysisScheduler } from '@/interfaces/worker/schedulers/market-analysis.scheduler';
+import { MarketAnalysisScheduler } from '@/interfaces/worker/market-analysis';
 
 const logger = getLogger();
 

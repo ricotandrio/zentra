@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { Logger } from 'pino';
-import { MarketAnalysisJob } from '../jobs';
+import { MarketAnalysisJob } from './job';
 import { ITickerRepository } from '@/domain/repositories/ticker.repository';
 import { IEventBus } from '@/shared/event-bus';
 

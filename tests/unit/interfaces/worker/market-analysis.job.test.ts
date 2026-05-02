@@ -1,4 +1,4 @@
-import { MarketAnalysisJob } from '@/interfaces/worker/jobs/market-analysis.job';
+import { MarketAnalysisJob } from '@/interfaces/worker/market-analysis';
 import { GetSubscribedTickersUseCase, AnalyzeMarketUseCase } from '@/application/use-cases/ticker';
 import { Ticker } from '@/domain/entities/ticker.entity';
 import { Logger } from 'pino';

@@ -1,4 +1,4 @@
-import { MarketAnalysisScheduler } from '@/interfaces/worker/schedulers/market-analysis.scheduler';
+import { MarketAnalysisScheduler } from '@/interfaces/worker/market-analysis';
 import { IEventBus } from '@/shared/event-bus';
 import { Logger } from 'pino';
 

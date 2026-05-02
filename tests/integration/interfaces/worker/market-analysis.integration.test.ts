@@ -1,5 +1,5 @@
-import { MarketAnalysisJob } from '@/interfaces/worker/jobs/market-analysis.job';
-import { MarketAnalysisScheduler } from '@/interfaces/worker/schedulers/market-analysis.scheduler';
+import { MarketAnalysisJob } from '@/interfaces/worker/market-analysis';
+import { MarketAnalysisScheduler } from '@/interfaces/worker/market-analysis';
 import { Ticker } from '@/domain/entities/ticker.entity';
 import { getLogger } from '@/shared/logger';
 import { IEventBus } from '@/shared/event-bus';
