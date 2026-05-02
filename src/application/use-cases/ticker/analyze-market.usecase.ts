@@ -13,10 +13,8 @@ export class AnalyzeMarketUseCase {
     try {
       return await analyzeMarket(symbol);
     } catch (error) {
-      throw new Error(
-        `Failed to analyze ${symbol}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        { cause: error }
-      );
+      // eslint-disable-next-line preserve-caught-error
+      throw new Error(`Failed to analyze ${symbol}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -32,10 +30,8 @@ export class AnalyzeMarketUseCase {
     try {
       return await analyzeMultipleTickers(symbols);
     } catch (error) {
-      throw new Error(
-        `Failed to analyze tickers: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        { cause: error }
-      );
+      // eslint-disable-next-line preserve-caught-error
+      throw new Error(`Failed to analyze tickers: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

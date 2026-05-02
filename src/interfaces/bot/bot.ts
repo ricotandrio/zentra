@@ -1,7 +1,7 @@
 import { AutocompleteInteraction, ChatInputCommandInteraction, Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, SlashCommandOptionsOnlyBuilder } from 'discord.js';
 import { Logger } from 'pino';
 import { handleNaturalLanguageMessage } from './handlers';
-import * as ping from './commands';
+import * as ping from './commands/ping.command';
 import * as addTicker from './commands/add-ticker.command';
 import * as listTickers from './commands/list-tickers.command';
 import * as marketSummary from './commands/market-summary.command';

@@ -20,7 +20,11 @@
           "title": "News 3"
         }
       ],
-      "overallSentiment": 0.8
+      "overallSentiment": {
+        "label": "bullish",
+        "score": 0.8,
+        "signals": []
+      }
     }
   ],
   "multiple": [
@@ -44,7 +48,11 @@
           "title": "Good outlook"
         }
       ],
-      "overallSentiment": 0.8
+      "overallSentiment": {
+        "label": "bullish",
+        "score": 0.8,
+        "signals": []
+      }
     },
     {
       "quote": {
@@ -63,7 +71,11 @@
           "title": "Market challenge"
         }
       ],
-      "overallSentiment": -0.2
+      "overallSentiment": {
+        "label": "neutral",
+        "score": -0.2,
+        "signals": []
+      }
     }
   ],
   "empty": []

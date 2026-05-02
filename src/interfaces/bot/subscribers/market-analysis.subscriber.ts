@@ -1,6 +1,7 @@
-import { Client as DiscordClient } from 'discord.js';
+import { Client as DiscordClient, EmbedBuilder } from 'discord.js';
 import { Logger } from 'pino';
 import { IEventBus, MarketAnalysisCompleteEvent, MarketAnalysisErrorEvent } from '@/shared/event-bus';
+import { WorkerWebhookPayload } from '@/application/dto/market-results.dto';
 import { ProcessMarketAnalysisResultsUseCase } from '@/application/use-cases/ticker/process-market-results.usecase';
 
 /**
@@ -25,11 +26,23 @@ export const registerMarketAnalysisSubscriber = (
           'Bot received market analysis complete event'
         );
 
-        // Convert event data to use case payload format
-        const payload = {
+        // Parse sentiment strings back to objects and convert to use case payload format
+        const results = event.data.results.map((r) => {
+          const [label, scoreStr] = r.sentiment.split(':');
+          return {
+            ...r,
+            sentiment: {
+              label: label as 'bullish' | 'bearish' | 'neutral',
+              score: parseFloat(scoreStr || '0'),
+              signals: [],
+            },
+          };
+        });
+
+        const payload: WorkerWebhookPayload = {
           source: 'market-analysis-job',
           timestamp: event.data.timestamp,
-          results: event.data.results,
+          results,
           channelId: event.data.channelId,
         };
 
@@ -46,14 +59,16 @@ export const registerMarketAnalysisSubscriber = (
         }
 
         // Split embeds into chunks (Discord limit: 10 embeds per message)
-        const chunks: typeof embeds[][] = [];
+        const chunks: EmbedBuilder[][] = [];
         for (let i = 0; i < embeds.length; i += 10) {
           chunks.push(embeds.slice(i, i + 10));
         }
 
         // Send all chunks
         for (const chunk of chunks) {
-          await channel.send({ embeds: chunk });
+          if (channel.isTextBased() && 'send' in channel) {
+            await channel.send({ embeds: chunk });
+          }
         }
 
         logger.info(
