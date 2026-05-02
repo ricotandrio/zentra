@@ -207,7 +207,7 @@ describe('MarketAnalysisJob', () => {
         ticker: 'BBCA.JK',
         price: 7500,
         changePercent: 1.5,
-        sentiment: 0.8,
+        sentiment: 'bullish:0.8',
         volume: 5000000,
         newsCount: 3,
       });

@@ -120,16 +120,20 @@ export async function execute(
       chunks.push(embeds.slice(i, i + 10));
     }
 
-    // Send first chunk in the reply
-    await interaction.editReply({
-      embeds: chunks[0],
-    });
+    // Send all chunks
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      if (!chunk || chunk.length === 0) continue;
 
-    // Send remaining chunks as follow-ups
-    for (let i = 1; i < chunks.length; i++) {
-      await interaction.followUp({
-        embeds: chunks[i],
-      });
+      if (i === 0) {
+        await interaction.editReply({
+          embeds: chunk,
+        });
+      } else {
+        await interaction.followUp({
+          embeds: chunk,
+        });
+      }
     }
   } catch (error) {
     const message =

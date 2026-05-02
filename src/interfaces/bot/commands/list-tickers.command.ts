@@ -24,7 +24,7 @@ export async function execute(
     }
 
     const tickerList = tickers
-      .map((t, i) => `${i + 1}. **${t.symbol}** — ${t.name}`)
+      .map((t, i) => `${i + 1}. **${t.symbol}**`)
       .join('\n');
 
     await interaction.reply(`📊 **Watched Tickers** (${tickers.length}):\n\n${tickerList}`);

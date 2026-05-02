@@ -52,6 +52,12 @@ export class MarketAnalysisJob {
         topHeadlines: analysis.news.slice(0, 3).map((n) => n.title),
       }));
 
+      // Convert SentimentResult to string format for DTO
+      const formattedResults = results.map((r) => ({
+        ...r,
+        sentiment: `${r.sentiment.label}:${r.sentiment.score}`,
+      }));
+
       // Build and publish event
       const event: MarketAnalysisCompleteEvent = {
         type: 'market-analysis:complete',
@@ -60,7 +66,7 @@ export class MarketAnalysisJob {
         data: {
           channelId,
           timestamp: new Date().toISOString(),
-          results,
+          results: formattedResults,
         },
       };
 

@@ -122,7 +122,7 @@ async function fetchNews(ticker: string, newsLimit: number = 10): Promise<NewsAr
   return (result.news ?? []).map((item) => ({
     title: item.title,
     publisher: item.publisher ?? 'Unknown',
-    publishedAt: new Date((item.providerPublishTime ?? 0) * 1000),
+    publishedAt: new Date((Number(item.providerPublishTime) || 0) * 1000),
     url: item.link ?? '',
   }));
 }
@@ -132,7 +132,8 @@ function generateSummary(quote: MarketQuote, sentiment: SentimentResult): string
   const emoji =
     sentiment.label === 'bullish' ? '🟢' : sentiment.label === 'bearish' ? '🔴' : '🟡';
 
-  const priceStr = `${quote.ticker} is ${direction} ${Math.abs(quote.changePercent).toFixed(2)}% at Rp${quote.price.toLocaleString()}`;
+  const changePercent = quote.changePercent as number;
+  const priceStr = `${quote.ticker} is ${direction} ${Math.abs(changePercent).toFixed(2)}% at Rp${quote.price.toLocaleString()}`;
   const sentimentStr = `News sentiment is ${sentiment.label} (score: ${sentiment.score})`;
   const signalStr =
     sentiment.signals.length > 0
