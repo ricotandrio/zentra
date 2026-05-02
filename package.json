@@ -13,6 +13,7 @@
   "author": "@ricotandrio",
   "scripts": {
     "prepare": "husky install",
+    "build": "tsc",
     "dev": "dotenv -e .env -- tsx watch src/bootstrap/main.ts",
     "test": "jest --coverage --watchAll=false",
     "test:unit": "jest --testPathPattern=unit --coverage --watchAll=false",
