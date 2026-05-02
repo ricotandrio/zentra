@@ -7,11 +7,12 @@ import { initDatabase } from '@/infrastructure/persistence/db/database';
 import { SqliteTickerRepository } from '@/infrastructure/persistence/db/sqlite-ticker.repository';
 import { MarketAnalysisScheduler, MarketAnalysisSubscriber } from '@/interfaces/worker/market-analysis';
 
-const logger = getLogger();
 
-// -----------------------------
-// INIT SHARED DEPENDENCIES
-// -----------------------------
+/**
+ * Shared dependencies initialization
+ */
+const logger = getLogger();
+logger.info('Logger initialized');
 
 const eventBus = initializeEventBus();
 logger.info('Event bus initialized');
@@ -20,40 +21,20 @@ const db = initDatabase();
 logger.info('Database initialized');
 
 const tickerRepository = new SqliteTickerRepository(db);
-
-// -----------------------------
-// DISCORD CLIENT (shared)
-// -----------------------------
-
-const botToken = env.DISCORD.BOT_TOKEN;
-const clientId = env.DISCORD.CLIENT_ID;
-const guildId = env.DISCORD.GUILD_ID;
-const channelId = env.DISCORD.DISCORD_STANDUP_CHANNEL_ID;
-
-if (!botToken || !clientId || !guildId || !channelId) {
-  logger.error('Missing required Discord environment variables');
-  process.exit(1);
-}
-
-// const discordClient = new Client({
-//   intents: [GatewayIntentBits.Guilds],
-// });
-
-// discordClient.once('clientReady', () => {
-//   logger.info(`Discord ready as ${discordClient.user?.tag}`);
-// });
-
-// discordClient.on('error', (error) => {
-//   logger.error(error, 'Discord client error');
-// });
-
-// -----------------------------
-// START EVERYTHING
-// -----------------------------
+logger.info('Ticker repository initialized');
 
 let discordClient: Client;
 
+
+/**
+ * Main application entry point
+ */
 (async () => {
+  const botToken = env.DISCORD.BOT_TOKEN;
+  const clientId = env.DISCORD.CLIENT_ID;
+  const guildId = env.DISCORD.GUILD_ID;
+  const channelId = env.DISCORD.DISCORD_STANDUP_CHANNEL_ID;
+
   discordClient = await startBot(
     botToken,
     clientId,
@@ -63,8 +44,10 @@ let discordClient: Client;
     tickerRepository,
     eventBus
   );
+  logger.info('Discord bot started');
 
   startExpressApp(env.EXPRESS.PORT, logger, discordClient, eventBus);
+  logger.info('Express API server started');
 
   const scheduler = new MarketAnalysisScheduler({
     logger,
@@ -72,6 +55,7 @@ let discordClient: Client;
     channelId,
     eventBus,
   });
+  logger.info('Market analysis scheduler initialized');
 
   const subscriber = new MarketAnalysisSubscriber(
     eventBus,
@@ -79,6 +63,7 @@ let discordClient: Client;
     tickerRepository,
     channelId
   );
+  logger.info('Market analysis subscriber initialized');
 
   subscriber.subscribe();
   scheduler.start();
@@ -89,10 +74,10 @@ let discordClient: Client;
   process.exit(1);
 });
 
-// -----------------------------
-// GRACEFUL SHUTDOWN
-// -----------------------------
 
+/**
+ * Graceful shutdown handling
+ */
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 
