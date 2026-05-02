@@ -36,11 +36,9 @@ export class MarketAnalysisJob {
       const analyzeUseCase = new AnalyzeMarketUseCase();
       const tickerSymbols = tickers.map((t) => t.symbol);
 
-      logger.info({ count: tickerSymbols.length }, 'Analyzing tickers');
+      logger.info(`Analyzing ${tickerSymbols.length} tickers`);
       const analyses = await analyzeUseCase.analyzeMultipleTickers(tickerSymbols);
 
-      logger.info(analyses);
-      
       // Convert to event payload format
       const results = analyses.map((analysis) => ({
         ticker: analysis.quote.ticker,
@@ -66,14 +64,11 @@ export class MarketAnalysisJob {
         },
       };
 
-      logger.info(
-        { resultsCount: results.length },
-        'Publishing market analysis complete event'
-      );
+      logger.info(`Publishing market analysis complete event with ${results.length} results`);
 
       await eventBus.publish(event);
 
-      logger.info({ count: analyses.length }, 'Market analysis completed');
+      logger.info(`Market analysis completed with ${analyses.length} results`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       

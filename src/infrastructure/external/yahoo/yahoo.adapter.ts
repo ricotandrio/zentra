@@ -6,7 +6,7 @@ import {
   MarketAnalysis,
 } from './yahoo.types';
 
-const yahooFinance = new YahooFinance();
+const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
 // ─── Sentiment Keywords ───────────────────────────────────────────────────────
 // Simple lexicon-based sentiment — no LLM needed for POC

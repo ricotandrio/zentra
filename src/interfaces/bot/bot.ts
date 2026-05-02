@@ -50,8 +50,7 @@ export const deployBot = async (
     );
 
     logger.info(
-      { count: body.length },
-      'Slash commands registered successfully'
+      `Slash commands registered successfully (${body.length} commands)`
     );
   } catch (error) {
     logger.error(error, 'Error deploying bot commands');

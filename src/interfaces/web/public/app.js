@@ -6,39 +6,6 @@ function log(message) {
   logEl.scrollTop = logEl.scrollHeight;
 }
 
-// --- Mock triggers ---
-
-function triggerIHSG() {
-  log('Triggering IHSG worker...');
-  
-  setTimeout(() => {
-    log('IHSG worker completed (mock)');
-  }, 1000);
-}
-
-function triggerPR() {
-  log('Triggering PR summary...');
-  
-  setTimeout(() => {
-    log('PR summary generated (mock)');
-  }, 1000);
-}
-
-// --- Custom event emitter (mock) ---
-
-function emitCustom() {
-  const event = document.getElementById('eventName').value;
-  const payloadRaw = document.getElementById('payload').value;
-
-  try {
-    const payload = JSON.parse(payloadRaw);
-    log(`Event emitted: ${event}`);
-    log(`Payload: ${JSON.stringify(payload)}`);
-  } catch (err) {
-    log('Invalid JSON payload');
-  }
-}
-
 async function triggerMarketAnalysisWorker() {
   try {
     const res = await fetch("http://localhost:3000/workers/market-analysis", {
@@ -52,5 +19,81 @@ async function triggerMarketAnalysisWorker() {
     }
   } catch (err) {
     log(`Error triggering market analysis worker: ${err.message}`);
+  }
+}
+
+async function sendRequest() {
+  const method = document.getElementById('method').value;
+  const url = document.getElementById('url').value;
+  const headersInput = document.getElementById('headers').value;
+  const bodyInput = document.getElementById('body').value;
+
+  let headers = {};
+  let body = undefined;
+
+  try {
+    headers = headersInput ? JSON.parse(headersInput) : {};
+  } catch (e) {
+    log('Invalid headers JSON');
+    return;
+  }
+
+  try {
+    if (method !== 'GET') {
+      body = bodyInput ? JSON.stringify(JSON.parse(bodyInput)) : undefined;
+    }
+  } catch (e) {
+    log('Invalid body JSON');
+    return;
+  }
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers,
+      body,
+    });
+
+    const text = await res.text();
+
+    log(`
+      [${method}] ${url}
+      Status: ${res.status}
+      Response: ${text}
+    `);
+  } catch (err) {
+    log(`Request failed: ${err.message}`);
+  }
+}
+
+async function emitCustom() {
+  const eventName = document.getElementById('eventName').value;
+  const payloadInput = document.getElementById('payload').value;
+
+  let payload;
+
+  try {
+    payload = JSON.parse(payloadInput);
+  } catch (e) {
+    log('Invalid JSON payload');
+    return;
+  }
+
+  try {
+    const res = await fetch("http://localhost:3000/dev/events", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        type: eventName,
+        data: payload
+      })
+    });
+
+    const result = await res.json();
+    log(`Event emitted: ${JSON.stringify(result)}`);
+  } catch (err) {
+    log(`Error emitting event: ${err.message}`);
   }
 }

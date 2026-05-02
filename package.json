@@ -6,9 +6,10 @@
   "directories": {
     "doc": "docs"
   },
-  "keywords": ["bot"],
+  "keywords": [
+    "bot"
+  ],
   "author": "@ricotandrio",
-  "type": "module",
   "scripts": {
     "prepare": "husky install",
     "dev": "dotenv -e .env -- tsx watch src/bootstrap/main.ts",
@@ -27,7 +28,7 @@
     "@eslint/js": "^10.0.1",
     "@types/better-sqlite3": "^7.6.8",
     "@types/express": "^5.0.6",
-    "@types/jest": "^29.5.11",
+    "@types/jest": "^29.5.14",
     "@types/node": "^25.6.0",
     "@types/node-cron": "^3.0.11",
     "@types/supertest": "^6.0.2",

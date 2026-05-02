@@ -106,10 +106,7 @@ describe('MarketAnalysisJob', () => {
 
       // Assert
       expect(mockLogger.info).toHaveBeenCalledWith('Starting market analysis job');
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        { count: 2 },
-        'Analyzing tickers'
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith(`Analyzing ${2} tickers`);
       expect(mockEventBus.publish).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'market-analysis:complete',
@@ -117,8 +114,7 @@ describe('MarketAnalysisJob', () => {
         })
       );
       expect(mockLogger.info).toHaveBeenCalledWith(
-        expect.objectContaining({ count: 2 }),
-        'Market analysis completed'
+        `Market analysis completed with ${2} results`
       );
     });
 

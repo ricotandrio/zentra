@@ -39,7 +39,7 @@ export class MarketAnalysisScheduler {
   start(): void {
     const { logger, schedule = '0 18 * * *' } = this.config;
 
-    logger.info({ schedule }, 'Starting market analysis scheduler');
+    logger.info(`Starting market analysis scheduler at ${schedule}`);
 
     this.task = cron.schedule(schedule, async () => {
       try {

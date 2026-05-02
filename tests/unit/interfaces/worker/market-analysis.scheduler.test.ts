@@ -72,8 +72,7 @@ describe('MarketAnalysisScheduler', () => {
         expect.any(Function)
       );
       expect(mockLogger.info).toHaveBeenCalledWith(
-        { schedule: '0 18 * * *' },
-        'Starting market analysis scheduler'
+        'Starting market analysis scheduler at 0 18 * * *'
       );
     });
 
@@ -97,8 +96,7 @@ describe('MarketAnalysisScheduler', () => {
         expect.any(Function)
       );
       expect(mockLogger.info).toHaveBeenCalledWith(
-        { schedule: customSchedule },
-        'Starting market analysis scheduler'
+        `Starting market analysis scheduler at ${customSchedule}`
       );
     });
 
