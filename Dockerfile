@@ -1,8 +1,9 @@
 # Deps Stage
 FROM node:20-alpine AS deps
 WORKDIR /app
+RUN apk add --no-cache python3 make g++
 COPY package*.json ./
-RUN npm ci --ignore-scripts
+RUN npm ci
 
 # Build Stage
 FROM node:20-alpine AS builder
@@ -18,7 +19,6 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
 RUN mkdir -p /app/data && chown -R nodejs:nodejs /app
 USER nodejs
 EXPOSE 3000

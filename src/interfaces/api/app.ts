@@ -15,7 +15,7 @@ export const createExpressApp = (
   app.use(express.json());
   app.use(createHealthRoutes(logger));
   app.use('/workers', createWorkerRoutes(logger, eventBus));
-  app.use('/web', express.static(path.join(process.cwd(), '../../interfaces/web/public')));
+  app.use('/web', express.static(path.join(process.cwd(), 'src/interfaces/web/public')));
 
   return app;
 };
