@@ -39,6 +39,8 @@ export class MarketAnalysisJob {
       logger.info({ count: tickerSymbols.length }, 'Analyzing tickers');
       const analyses = await analyzeUseCase.analyzeMultipleTickers(tickerSymbols);
 
+      logger.info(analyses);
+      
       // Convert to event payload format
       const results = analyses.map((analysis) => ({
         ticker: analysis.quote.ticker,

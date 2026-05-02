@@ -8,12 +8,7 @@
   },
   "scripts": {
     "prepare": "husky install",
-    "dev:api": "dotenv -e .env -- tsx watch src/bootstrap/main.api.ts",
-    "dev:bot": "dotenv -e .env -- tsx watch src/bootstrap/main.bot.ts",
-    "dev:worker": "dotenv -e .env -- tsx watch src/bootstrap/main.worker.ts",
-    "start:api": "dotenv -e .env -- node -r tsx src/bootstrap/main.api.ts",
-    "start:bot": "dotenv -e .env -- node -r tsx src/bootstrap/main.bot.ts",
-    "start:worker": "dotenv -e .env -- node -r tsx src/bootstrap/main.worker.ts",
+    "dev": "dotenv -e .env -- tsx watch src/bootstrap/main.ts",
     "test": "jest --coverage --watchAll=false",
     "test:unit": "jest --testPathPattern=unit --coverage --watchAll=false",
     "test:integration": "jest --testPathPattern=integration --coverage --watchAll=false",

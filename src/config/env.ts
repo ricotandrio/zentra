@@ -26,4 +26,5 @@ export const env = {
     REPO: requireEnv('GITHUB_REPOSITORY_NAME'),
   },
   WEBHOOK_BASE_URL: process.env.WEBHOOK_BASE_URL || 'http://localhost:3000',
+  API_BASE_URL: process.env.API_BASE_URL || 'http://localhost:3000',
 };

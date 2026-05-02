@@ -5,9 +5,12 @@ import { ProcessMarketAnalysisResultsUseCase } from '@/application/use-cases/tic
 
 /**
  * Subscribe to market analysis events from the worker
- * Delivers market analysis results to Discord
+ * Delivers market analysis results to Discord channel
+ *
+ * This subscriber lives in the bot to ensure delivery happens
+ * in the same process as the Discord client connection.
  */
-export const subscribeToMarketAnalysisEvents = (
+export const registerMarketAnalysisSubscriber = (
   discordClient: DiscordClient,
   eventBus: IEventBus,
   logger: Logger
@@ -19,10 +22,10 @@ export const subscribeToMarketAnalysisEvents = (
       try {
         logger.info(
           { resultsCount: event.data.results.length },
-          'Received market analysis complete event'
+          'Bot received market analysis complete event'
         );
 
-        // Convert event data to webhook payload format
+        // Convert event data to use case payload format
         const payload = {
           source: 'market-analysis-job',
           timestamp: event.data.timestamp,
@@ -48,20 +51,17 @@ export const subscribeToMarketAnalysisEvents = (
           chunks.push(embeds.slice(i, i + 10));
         }
 
-        // Send first chunk
-        await channel.send({ embeds: chunks[0] });
-
-        // Send remaining chunks as follow-ups
-        for (let i = 1; i < chunks.length; i++) {
-          await channel.send({ embeds: chunks[i] });
+        // Send all chunks
+        for (const chunk of chunks) {
+          await channel.send({ embeds: chunk });
         }
 
         logger.info(
           { channelId, messageCount: chunks.length, embeds: embeds.length },
-          'Market analysis results delivered to Discord via event bus'
+          'Market analysis results delivered to Discord'
         );
       } catch (error) {
-        logger.error(error, 'Error handling market analysis complete event');
+        logger.error(error, 'Error handling market analysis complete event in bot');
       }
     }
   );
@@ -73,14 +73,14 @@ export const subscribeToMarketAnalysisEvents = (
       try {
         logger.error(
           { error: event.data.error },
-          'Market analysis job failed - error event received'
+          'Market analysis job failed - bot received error event'
         );
-        // You could send an error notification to Discord here if desired
+        // Optional: send error notification to admin channel
       } catch (error) {
-        logger.error(error, 'Error handling market analysis error event');
+        logger.error(error, 'Error handling market analysis error event in bot');
       }
     }
   );
 
-  logger.info('Market analysis event subscribers initialized');
+  logger.info('Bot market analysis event subscribers registered');
 };

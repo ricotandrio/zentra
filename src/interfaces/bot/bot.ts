@@ -7,6 +7,7 @@ import * as listTickers from './commands/list-tickers.command';
 import * as marketSummary from './commands/market-summary.command';
 import { ITickerRepository } from '@/domain/repositories/ticker.repository';
 import { IEventBus } from '@/shared/event-bus';
+import { registerMarketAnalysisSubscriber } from './subscribers';
 
 export interface BotCommandWithDeps {
   data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder;
@@ -116,7 +117,7 @@ export const startBot = async (
   logger: Logger,
   tickerRepository?: ITickerRepository,
   eventBus?: IEventBus
-) => {
+): Promise<Client> => {
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,
@@ -132,6 +133,13 @@ export const startBot = async (
 
   registerHandlers(client, logger, tickerRepository, eventBus);
 
+  // Register event bus subscribers for market analysis delivery
+  if (eventBus) {
+    registerMarketAnalysisSubscriber(client, eventBus, logger);
+  }
+
   await client.login(botToken);
   logger.info('Discord bot started');
+
+  return client;
 };

@@ -38,3 +38,19 @@ function emitCustom() {
     log('Invalid JSON payload');
   }
 }
+
+async function triggerMarketAnalysisWorker() {
+  try {
+    const res = await fetch("http://localhost:3000/workers/market-analysis", {
+      method: "GET",
+    });
+    if (res.ok) {
+      const data = await res.json();
+      log(`Market analysis worker triggered successfully: ${JSON.stringify(data)}`);
+    } else {
+      log(`Failed to trigger market analysis worker: ${res.statusText}`);
+    }
+  } catch (err) {
+    log(`Error triggering market analysis worker: ${err.message}`);
+  }
+}
