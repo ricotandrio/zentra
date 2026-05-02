@@ -16,15 +16,6 @@ export function initDatabase(): Database.Database {
     )
   `);
 
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS worker_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-      level TEXT NOT NULL,
-      message TEXT NOT NULL
-    )
-  `);
-
   return db;
 }
 
