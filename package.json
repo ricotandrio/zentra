@@ -21,7 +21,9 @@
     "test:watch": "jest --watch",
     "lint": "eslint src tests",
     "prettier:check": "prettier --check src tests",
-    "prettier:fix": "prettier --write src tests"
+    "prettier:fix": "prettier --write src tests",
+    "docker:build": "docker build -t ricotandrio/zentra:latest .",
+    "docker:run": "docker run -d --name zentra -p 3000:3000 --env-file .env ricotandrio/zentra:latest"
   },
   "license": "ISC",
   "devDependencies": {
