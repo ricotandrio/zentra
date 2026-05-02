@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Zentra Dev Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <h1>Zentra Dev Panel</h1>
+
+  <div class="card">
+    <h3>Quick Actions</h3>
+    <button onclick="triggerMarketAnalysisWorker()">Run Market Analysis</button>
+  </div>
+
+  <div class="card">
+    <h3>API Request</h3>
+
+    <label>Method</label>
+    <select id="method">
+      <option>GET</option>
+      <option>POST</option>
+      <option>PUT</option>
+      <option>DELETE</option>
+    </select>
+
+    <label>URL</label>
+    <input id="url" placeholder="http://localhost:3000/health/ping" />
+
+    <label>Headers (JSON)</label>
+    <textarea id="headers">{ "Content-Type": "application/json" }</textarea>
+
+    <label>Body (JSON)</label>
+    <textarea id="body">{}</textarea>
+
+    <button onclick="sendRequest()">Send Request</button>
+  </div>
+
+  <div class="card">
+    <h3>Custom Event</h3>
+    <label>Event Name</label>
+    <input id="eventName" placeholder="IHSG_REQUESTED" />
+
+    <label>Payload (JSON)</label>
+    <textarea id="payload">{ "symbol": "^BBCA" }</textarea>
+
+    <button onclick="emitCustom()">Emit Event</button>
+  </div>
+
+  <div class="card">
+    <h3>Logs</h3>
+    <div id="log" class="log"></div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

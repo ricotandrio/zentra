@@ -50,7 +50,7 @@ See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for full layer rules, dependency boun
 
 ### Prerequisites
 
-- Node.js 20+
+- Node 20
 - A Discord bot token
 - Gemini API key
 - GitHub personal access token

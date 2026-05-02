@@ -1,5 +1,6 @@
 import { Message } from 'discord.js';
 import { Logger } from 'pino';
+import { IEventBus } from '@/shared/event-bus';
 
 /**
  * Natural language message handler
@@ -7,7 +8,8 @@ import { Logger } from 'pino';
  */
 export const handleNaturalLanguageMessage = async (
   message: Message,
-  logger: Logger
+  logger: Logger,
+  _eventBus?: IEventBus
 ) => {
   try {
     // TODO: Implement LLM-based intent routing

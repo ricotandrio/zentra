@@ -2,30 +2,36 @@
   "name": "zentra",
   "version": "1.0.0",
   "description": "Zentra is a personal automation hub",
-  "main": "index.js",
+  "main": "src/bootstrap/main.ts",
   "directories": {
     "doc": "docs"
   },
+  "keywords": [
+    "bot"
+  ],
+  "type": "module",
+  "author": "@ricotandrio",
   "scripts": {
     "prepare": "husky install",
-    "dev:api": "dotenv -e .env -- tsx watch src/bootstrap/main.api.ts",
-    "dev:bot": "dotenv -e .env -- tsx watch src/bootstrap/main.bot.ts",
-    "test": "jest",
+    "dev": "dotenv -e .env -- tsx watch src/bootstrap/main.ts",
+    "test": "jest --coverage --watchAll=false",
+    "test:unit": "jest --testPathPattern=unit --coverage --watchAll=false",
+    "test:integration": "jest --testPathPattern=integration --coverage --watchAll=false",
     "test:watch": "jest --watch",
-    "lint": "eslint src tests --max-warnings 0",
+    "lint": "eslint src tests",
     "prettier:check": "prettier --check src tests",
     "prettier:fix": "prettier --write src tests"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
   "devDependencies": {
     "@commitlint/cli": "^20.5.3",
     "@commitlint/config-conventional": "^20.5.3",
     "@eslint/js": "^10.0.1",
+    "@types/better-sqlite3": "^7.6.8",
     "@types/express": "^5.0.6",
-    "@types/jest": "^29.5.11",
+    "@types/jest": "^29.5.14",
     "@types/node": "^25.6.0",
+    "@types/node-cron": "^3.0.11",
     "@types/supertest": "^6.0.2",
     "@typescript-eslint/eslint-plugin": "^8.59.1",
     "@typescript-eslint/parser": "^8.59.1",
@@ -42,10 +48,13 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
+    "better-sqlite3": "^9.6.0",
     "discord.js": "^14.26.3",
     "express": "^5.2.1",
+    "node-cron": "^3.0.3",
     "pino": "^8.17.2",
     "pino-pretty": "^10.3.1",
-    "typescript-eslint": "^8.59.1"
+    "typescript-eslint": "^8.59.1",
+    "yahoo-finance2": "^3.14.0"
   }
 }

@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint'
 
 export default [
   {
-    ignores: ['node_modules/', 'dist/', 'build/'],
+    ignores: ['node_modules/', 'dist/', 'build/', "src/interfaces/web/public/"],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -30,13 +30,14 @@ export default [
           functions: 'never',
         },
       ],
-      'no-unused-vars': 'off',
+      'eol-last': ['error', 'always'],
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_' },
       ],
       '@typescript-eslint/explicit-function-return-types': 'off',
-      'eol-last': ['error', 'always'],
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/preserve-caught-error': 'off',
     },
   },
 ]

@@ -1,26 +1,23 @@
-# ARCHITECTURE.md
+# ARCHITECTURE.md — Zentra System Overview
 
-> **This is the source of truth for Zentra's system architecture.**
-> When generating, modifying, or reviewing code — always consult this document first.
+> **Table of contents for Zentra architecture and developer guides.**
+> This is the entry point. For AI agents, see [../.claude/skills/](../.claude/skills/) for focused guides on specific topics.
 
 ---
 
-## What is Zentra?
+## System Overview
 
 Zentra is a **TypeScript modular monolith** built with **Clean Architecture**.
 
-It supports:
+### What It Does
 
-- Discord bot interactions via natural language (LLM-routed)
-- HTTP API
-- Background worker jobs (market summary)
-- LLM-based orchestration
-- GitHub integration (issue creation & PR notifications)
-- Yahoo Finance market data
+- **Discord Bot** — Natural language (LLM-routed) + slash commands
+- **HTTP API** — Market analysis endpoints, webhook listeners
+- **Background Worker** — Scheduled market data analysis
+- **Data Persistence** — SQLite ticker subscriptions
+- **Integrations** — GitHub (issues, PR notifications), Yahoo Finance, LLM
 
----
-
-## Architecture at a Glance
+### Architecture Principle
 
 ```
 Interfaces → Application → Domain
@@ -30,7 +27,7 @@ Interfaces → Application → Domain
             Bootstrap
 ```
 
-**Principle:** Dependencies flow inward. Domain knows nothing. Infrastructure knows everything except business logic.
+**Dependencies flow inward. Domain is pure logic. Infrastructure handles external services.**
 
 ---
 
@@ -38,278 +35,111 @@ Interfaces → Application → Domain
 
 ```
 src/
-├── bootstrap/        # App startup & DI composition
+├── bootstrap/        # Application startup & DI wiring
 ├── domain/           # Core business rules (pure TS, no deps)
 ├── application/      # Use cases & orchestration
-├── infrastructure/   # External implementations (DB, APIs, queues)
+├── infrastructure/   # External service adapters
 ├── interfaces/       # Entrypoints (bot, API, worker)
-├── shared/           # Generic utilities (no feature logic)
-└── config/           # Env, feature flags, provider config
+├── shared/           # Generic utilities
+└── config/           # Environment & configuration
 ```
 
 ---
 
-## Layer Reference
+## Current Capabilities
 
-### `bootstrap/`
-
-Wires the app together. No business logic allowed.
-
-```
-bootstrap/
-├── container.ts      # Dependency injection
-├── context.ts        # Runtime context
-├── main.bot.ts       # Discord bot entrypoint
-├── main.api.ts       # HTTP API entrypoint
-└── main.worker.ts    # Worker entrypoint
-```
-
-**Rules:** Only DI, process init, and runtime composition. Never business logic.
+| Feature | Status | Location |
+|---------|--------|----------|
+| **Discord Bot** — Natural language | ✅ Active | `src/interfaces/bot/handlers/` |
+| **Discord Bot** — Slash commands | ✅ Active | `src/interfaces/bot/commands/` |
+| **HTTP API** — Market analysis trigger | ✅ Active | `src/interfaces/api/routes/workers.ts` |
+| **Worker** — Market analysis job | ✅ Active | `src/interfaces/worker/jobs/market-analysis.job.ts` |
+| **Event Bus** — In-memory pub/sub | ✅ Active | `src/shared/event-bus/` |
+| **GitHub** — Issue creation | ✅ Active | `src/infrastructure/external/github/` |
+| **Yahoo Finance** — Market data | ✅ Active | `src/infrastructure/external/yahoo/` |
+| **LLM** — Gemini routing | ✅ Active | `src/infrastructure/external/llm/` |
 
 ---
 
-### `domain/`
+## Core Concepts
 
-Pure business rules. No framework, no I/O, no external knowledge.
+### The Three Layers
 
-```
-domain/
-├── entities/         # Core models (User, Issue, Repository)
-├── repositories/     # Repository interfaces (contracts only)
-├── services/         # Domain services
-├── events/           # Domain events
-├── value-objects/    # Immutable value types
-└── types/            # Shared domain types
-```
+| Layer | Responsibility | Rules |
+|-------|---|---|
+| **Domain** | Business rules | Pure TS, no frameworks, no I/O |
+| **Application** | Use cases, orchestration | Coordinates domain + infrastructure via contracts |
+| **Infrastructure** | External services, adapters | All I/O, SDK calls, database access |
 
-**Rules:**
+### The Interfaces
 
-- ✅ Pure TypeScript logic only
-- ❌ No framework imports
-- ❌ No database access
-- ❌ No API calls
-- ❌ No knowledge of Discord, HTTP, Gemini, GitHub, or Yahoo
+| Interface | Role | Location |
+|-----------|------|----------|
+| **Bot** | Discord entrypoint | `src/interfaces/bot/` |
+| **API** | HTTP entrypoint | `src/interfaces/api/` |
+| **Worker** | Background jobs | `src/interfaces/worker/` |
+| **Web** | Static frontend | `src/interfaces/web/` |
+| **Bootstrap** | DI wiring | `src/bootstrap/` |
 
----
-
-### `application/`
-
-Use cases and orchestration. Coordinates domain logic and calls infrastructure via contracts.
+### Dependency Flow
 
 ```
-application/
-├── use-cases/        # Feature flows
-│   ├── issue/        # GitHub issue creation (triggered by bot)
-│   ├── trading/      # Market summary (triggered by worker)
-│   └── user/
-├── contracts/        # Abstractions for unstable dependencies
-│   ├── llm.contract.ts
-│   └── market.contract.ts
-├── dto/              # Data transfer objects
-└── orchestrators/    # LLM intent routing → use case dispatch
-```
+✅ Interfaces → Application → Domain
+✅ Infrastructure → Application → Domain
+✅ Bootstrap → All layers
 
-**Use cases:**
-
-- `issue/` — creates GitHub issues, invoked when bot interprets user intent
-- `trading/` — fetches and summarizes market data from Yahoo Finance via LLM
-- Orchestration only — no HTTP, no Discord, no SDK calls
-
-**Contracts** — only for likely-to-be-replaced dependencies:
-
-- ✅ Use for: LLM providers, Market data providers
-- ❌ Avoid for: GitHub, analytics, terminal
-
-**Orchestrators** — interpret LLM output and dispatch to the correct use case:
-
-- Must stay thin
-- Must not hold business rules
-
----
-
-### `infrastructure/`
-
-All external implementations. Adapts third-party services for the app.
-
-```
-infrastructure/
-├── persistence/
-│   └── db/           # Implements domain repositories (no business logic)
-├── external/
-│   ├── github/
-│   ├── llm/          # Implements LlmContract
-│   ├── yahoo/        # Implements MarketContract
-│   └── terminal/
-├── analytics/
-├── queue/
-└── event-bus/
-```
-
-**Rules:**
-
-- Implements domain repository interfaces
-- Handles API transformation
-- ❌ No business logic
-
----
-
-### `interfaces/`
-
-System entrypoints. Parse inputs, call use cases, return outputs. No business logic.
-
-```
-interfaces/
-├── bot/
-│   ├── handlers/         # Natural language message handler (no slash commands)
-│   ├── presenters/       # Format and send Discord responses
-│   └── services/         # Bot-scoped helpers
-├── api/
-│   ├── routes/
-│   ├── controllers/
-│   └── presenters/
-└── worker/
-    ├── jobs/
-    │   └── market-summary.job.ts   # Only active job
-    ├── schedulers/
-    └── handlers/
-```
-
-**Bot** accepts natural language messages only — no slash command handlers.
-
-- The LLM orchestrator interprets user intent and routes to the correct use case
-- ✅ Bot may trigger: GitHub issue creation, GitHub PR notification (on PR open events)
-- ❌ No other GitHub operations allowed from the bot
-- ❌ No DB calls, no business logic
-
-**API** handles HTTP request/response only.
-
-**Worker** currently runs one job: market summary from Yahoo Finance.
-
-- Flow: `Cron → MarketSummaryJob → SummarizeMarketUseCase → Yahoo + LLM`
-- ❌ No direct business logic or DB access
-
----
-
-### `shared/`
-
-Generic, reusable utilities. No feature-specific logic.
-
-```
-shared/
-├── logger/
-├── errors/
-├── constants/
-└── utils/
+❌ Domain → anything else
+❌ Application → Infrastructure implementations
+❌ Application → Interfaces
 ```
 
 ---
 
-### `config/`
+## Common Workflows
 
-Environment variables, feature flags, and provider configuration.
+### Adding a Discord Bot Command
 
----
+1. Create use case in `src/application/use-cases/<feature>/`
+2. Create command in `src/interfaces/bot/commands/<command>.command.ts`
+3. Register in `src/interfaces/bot/bot.ts`
 
-## Dependency Rules
+### Integrating a New API
 
-### ✅ Allowed
+1. Define contract in `src/application/contracts/`
+2. Implement adapter in `src/infrastructure/external/<service>/`
+3. Inject contract into use case
+4. Wire in `src/bootstrap/main.api.ts` or `main.worker.ts`
 
-```
-interfaces     → application
-application    → domain
-application    → contracts
-infrastructure → application
-infrastructure → domain
-bootstrap      → all
-```
+### Adding a Background Job
 
-### ❌ Forbidden
+1. Create use case in `src/application/use-cases/<feature>/`
+2. Create job in `src/interfaces/worker/jobs/<job>.job.ts`
+3. Create scheduler in `src/interfaces/worker/schedulers/<scheduler>.scheduler.ts`
+4. Wire in `src/bootstrap/main.worker.ts`
 
-```
-domain         → anything
-application    → interfaces
-application    → infrastructure
-interfaces     → domain (direct)
-```
+### Adding Tests
 
----
-
-## Worker Architecture
-
-Zentra has three entrypoints sharing the same application core:
-
-```
-main.bot.ts
-main.api.ts
-main.worker.ts
-```
-
-Workers **must** reuse application use cases. Current active job:
-
-```
-Cron Scheduler
-  ↓
-MarketSummaryJob             (interfaces/worker/jobs/market-summary.job.ts)
-  ↓
-SummarizeMarketUseCase       (application/use-cases/trading)
-  ↓
-Yahoo Finance + LLM          (infrastructure/external)
-```
-
-**Rule:** Worker is not a standalone service. It shares the same app layer.
+1. Unit test in `tests/unit/` (mock all dependencies)
+2. Integration test in `tests/integration/` (mock only external services)
+3. Follow patterns in [Testing Strategies](./development/testing.md)
 
 ---
 
-## Naming Conventions
+## Dependency Rules Summary
 
-### ✅ Use
-
-```
-*.usecase.ts
-*.entity.ts
-*.service.ts
-*.repository.ts
-*.contract.ts
-*.adapter.ts
-*.job.ts
-*.handler.ts
-*.controller.ts
-```
-
-### ❌ Avoid
+**The Golden Rule:** Dependencies flow inward only.
 
 ```
-*.action.ts
-*.helper.ts
-*.manager.ts
+Interfaces (HTTP, Discord, CLI, Workers)
+     ↓ (depends on)
+ Application (Use Cases)
+     ↓ (depends on)
+   Domain (Entities, Value Objects, Services)
+     ↑ (implemented by)
+Infrastructure (Adapters, Repositories, External Services)
 ```
 
----
-
-## Anti-Patterns
-
-Do not:
-
-- Put business logic in handlers or adapters
-- Call DB from `interfaces/`
-- Call GitHub directly from bot handlers (go through use cases)
-- Expand bot GitHub scope beyond issue creation and PR notifications without updating this document
-- Create deep nested action folders
-- Create god orchestrators
-- Create contracts for stable dependencies
-
----
-
-## Philosophy
-
-Zentra is a **modular monolith** — one deployable unit with clear internal boundaries.
-
-Goals:
-
-- Shared business logic across all interfaces
-- Clear dependency boundaries
-- Low operational overhead
-- Scalable structure
-- Reusable worker architecture
-
-**A new interface (e.g. CLI, webhook) should never require changes to `domain/` or `application/`.**
+**Never:**
+- ❌ Domain imports anything but domain
+- ❌ Application imports Infrastructure implementations
+- ❌ Application imports Interfaces

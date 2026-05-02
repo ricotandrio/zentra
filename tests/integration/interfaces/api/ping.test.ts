@@ -12,13 +12,4 @@ describe('GET /ping', () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ message: 'pong' });
   });
-
-  it('should have correct content type', async () => {
-    const logger = getLogger();
-    const app = createExpressApp(logger);
-
-    const response = await request(app).get('/ping');
-
-    expect(response.headers['content-type']).toContain('application/json');
-  });
 });

@@ -17,12 +17,14 @@ export const env = {
   },
   LLM: {
     API_KEY: requireEnv('LLM_API_KEY'),
-    PROVIDER_NAME: (process.env.LLM_PROVIDER_NAME as 'openai' | 'gemini'),
-    MODEL_NAME: requireEnv('LLM_MODEL_NAME'),
+    PROVIDER_NAME: (process.env.LLM_PROVIDER_NAME as 'openai' | 'gemini') || 'gemini',
+    MODEL_NAME: requireEnv('LLM_MODEL_NAME') || 'gemini-2.0-flash',
   },
   GITHUB: {
     PERSONAL_ACCESS_TOKEN: requireEnv('GITHUB_PERSONAL_ACCESS_TOKEN'),
     OWNER: requireEnv('GITHUB_OWNER_USERNAME'),
     REPO: requireEnv('GITHUB_REPOSITORY_NAME'),
   },
+  WEBHOOK_BASE_URL: process.env.WEBHOOK_BASE_URL || 'http://localhost:3000',
+  API_BASE_URL: process.env.API_BASE_URL || 'http://localhost:3000',
 };

@@ -1,0 +1,37 @@
+version: 2
+updates:
+  # Enable version updates for npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - ricotandrio
+    assignees:
+      - ricotandrio
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    allow:
+      - dependency-type: "all"
+    ignore:
+      # Add any packages to ignore here if needed
+      # - dependency-name: "package-name"
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    reviewers:
+      - ricotandrio
+    assignees:
+      - ricotandrio
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"

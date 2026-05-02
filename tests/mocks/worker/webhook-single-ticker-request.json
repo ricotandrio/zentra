@@ -1,0 +1,27 @@
+{
+  "source": "market-analysis-job",
+  "timestamp": "2026-05-01T00:00:00Z",
+  "channelId": "test-channel",
+  "results": [
+    {
+      "ticker": "BBCA.JK",
+      "price": 7500,
+      "changePercent": 1.5,
+      "volume": 5000000,
+      "fiftyTwoWeekHigh": 8000,
+      "fiftyTwoWeekLow": 6500,
+      "news": [
+        {
+          "title": "News 1"
+        },
+        {
+          "title": "News 2"
+        },
+        {
+          "title": "News 3"
+        }
+      ],
+      "overallSentiment": 0.8
+    }
+  ]
+}

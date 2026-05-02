@@ -1,21 +1,32 @@
-import express, { Express, Request, Response } from 'express';
+import express, { Express } from 'express';
+import { Client as DiscordClient } from 'discord.js';
 import { Logger } from 'pino';
+import { IEventBus } from '@/shared/event-bus';
+import { createHealthRoutes } from './routes/health';
+import { createWorkerRoutes } from './routes/workers';
+import path from 'path';
 
-export const createExpressApp = (logger: Logger): Express => {
+export const createExpressApp = (
+  logger: Logger,
+  discordClient?: DiscordClient,
+  eventBus?: IEventBus
+): Express => {
   const app = express();
-
   app.use(express.json());
-
-  app.get('/ping', (req: Request, res: Response) => {
-    logger.info({ endpoint: '/ping' }, 'Ping endpoint called');
-    res.json({ message: 'pong' });
-  });
+  app.use(createHealthRoutes(logger));
+  app.use('/workers', createWorkerRoutes(logger, eventBus));
+  app.use('/web', express.static(path.join(process.cwd(), '../../interfaces/web/public')));
 
   return app;
 };
 
-export const startExpressApp = (port: number, logger: Logger) => {
-  const app = createExpressApp(logger);
+export const startExpressApp = (
+  port: number,
+  logger: Logger,
+  discordClient?: DiscordClient,
+  eventBus?: IEventBus
+) => {
+  const app = createExpressApp(logger, discordClient, eventBus);
 
   app.listen(port, () => {
     logger.info(`API server running on http://localhost:${port}`);
