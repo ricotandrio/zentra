@@ -11,7 +11,6 @@ export function initDatabase(): Database.Database {
     CREATE TABLE IF NOT EXISTS tickers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       symbol TEXT NOT NULL UNIQUE,
-      name TEXT NOT NULL,
       added_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);

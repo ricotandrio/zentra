@@ -8,15 +8,13 @@ import { ITickerRepository } from '@/domain/repositories/ticker.repository';
 export class AddTickerUseCase {
   constructor(private tickerRepository: ITickerRepository) {}
 
-  async execute(input: { symbol: string; name: string }): Promise<void> {
-    // Check if ticker already exists
+  async execute(input: { symbol: string; }): Promise<void> {
     const exists = await this.tickerRepository.exists(input.symbol);
     if (exists) {
       throw new Error(`Ticker ${input.symbol} is already subscribed`);
     }
 
-    // Create and add ticker
-    const ticker = Ticker.create(input.symbol, input.name);
+    const ticker = Ticker.create(input.symbol);
     await this.tickerRepository.add(ticker);
   }
 }

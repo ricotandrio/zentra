@@ -2,10 +2,13 @@
   "name": "zentra",
   "version": "1.0.0",
   "description": "Zentra is a personal automation hub",
-  "main": "index.js",
+  "main": "src/bootstrap/main.ts",
   "directories": {
     "doc": "docs"
   },
+  "keywords": ["bot"],
+  "author": "@ricotandrio",
+  "type": "module",
   "scripts": {
     "prepare": "husky install",
     "dev": "dotenv -e .env -- tsx watch src/bootstrap/main.ts",
@@ -17,8 +20,6 @@
     "prettier:check": "prettier --check src tests",
     "prettier:fix": "prettier --write src tests"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
   "devDependencies": {
     "@commitlint/cli": "^20.5.3",

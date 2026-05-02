@@ -9,13 +9,7 @@ export const data = new SlashCommandBuilder()
   .addStringOption((option) =>
     option
       .setName('symbol')
-      .setDescription('IDX ticker symbol (e.g., BBCA.JK, BBRI.JK)')
-      .setRequired(true)
-  )
-  .addStringOption((option) =>
-    option
-      .setName('name')
-      .setDescription('Company name')
+      .setDescription('IDX ticker symbol (e.g., BBCA, BMRI)')
       .setRequired(true)
   );
 
@@ -25,11 +19,13 @@ export async function execute(
   eventBus?: IEventBus
 ): Promise<void> {
   const symbol = interaction.options.getString('symbol', true).toUpperCase();
-  const name = interaction.options.getString('name', true);
 
   try {
     const useCase = new AddTickerUseCase(tickerRepository);
-    await useCase.execute({ symbol, name });
+
+    const normalizedSymbol = symbol.endsWith('.JK') ? symbol : `${symbol}.JK`;
+
+    await useCase.execute({ symbol: normalizedSymbol });
 
     // Emit ticker added event for other systems to listen to
     if (eventBus) {
@@ -38,7 +34,7 @@ export async function execute(
         source: 'bot',
         timestamp: new Date(),
         data: {
-          symbol,
+          symbol: normalizedSymbol,
           addedBy: interaction.user.username,
           timestamp: new Date().toISOString(),
         },
@@ -46,7 +42,7 @@ export async function execute(
     }
 
     await interaction.reply(
-      `✅ Successfully added **${symbol}** (${name}) to the watchlist!`
+      `✅ Successfully added **${normalizedSymbol}** to the watchlist!`
     );
   } catch (error) {
     const message =

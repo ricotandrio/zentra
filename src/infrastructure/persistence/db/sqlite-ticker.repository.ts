@@ -8,25 +8,26 @@ export class SqliteTickerRepository implements ITickerRepository {
   async add(ticker: Ticker): Promise<void> {
     try {
       const stmt = this.db.prepare(`
-        INSERT INTO tickers (symbol, name, added_at)
-        VALUES (?, ?, ?)
+        INSERT INTO tickers (symbol, added_at)
+        VALUES (?, ?)
       `);
 
-      stmt.run(ticker.symbol, ticker.name, ticker.addedAt.toISOString());
+      stmt.run(ticker.symbol, ticker.addedAt.toISOString());
     } catch (error) {
       if (error instanceof Error && error.message.includes('UNIQUE constraint failed')) {
-        throw new Error(`Ticker ${ticker.symbol} already exists`, { cause: error });
+        // eslint-disable-next-line preserve-caught-error
+        throw new Error(`Ticker ${ticker.symbol} already exists`);
       }
       throw error;
     }
   }
 
   async getAll(): Promise<Ticker[]> {
-    const stmt = this.db.prepare('SELECT symbol, name, added_at FROM tickers ORDER BY added_at DESC');
-    const rows = stmt.all() as Array<{ symbol: string; name: string; added_at: string }>;
+    const stmt = this.db.prepare('SELECT symbol, added_at FROM tickers ORDER BY added_at DESC');
+    const rows = stmt.all() as Array<{ symbol: string; added_at: string }>;
 
     return rows.map(
-      (row) => new Ticker(row.symbol, row.name, new Date(row.added_at))
+      (row) => new Ticker(row.symbol, new Date(row.added_at))
     );
   }
 
