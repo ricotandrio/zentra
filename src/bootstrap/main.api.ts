@@ -1,7 +1,7 @@
 import { Client, GatewayIntentBits } from 'discord.js';
 import { env } from '@/config';
 import { startExpressApp } from '@/interfaces/api';
-import { getLogger, initializeEventBus } from '@/shared';
+import { getLogger } from '@/shared/logger';
 
 const logger = getLogger();
 const PORT = env.EXPRESS.PORT;
@@ -12,16 +12,12 @@ if (!botToken) {
   process.exit(1);
 }
 
-// Initialize event bus early
-const eventBus = initializeEventBus();
-logger.info('Event bus initialized');
-
 // Initialize Discord client for webhook delivery
 const discordClient = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
-discordClient.once('clientReady', () => {
+discordClient.once('ready', () => {
   logger.info(`API Discord client ready as ${discordClient.user?.tag}`);
 });
 
@@ -32,7 +28,7 @@ discordClient.on('error', (error) => {
 // Login and start API
 (async () => {
   await discordClient.login(botToken);
-  startExpressApp(PORT, logger, discordClient, eventBus);
+  startExpressApp(PORT, logger, discordClient);
 })().catch((error) => {
   logger.error(error, 'Failed to start API');
   process.exit(1);
