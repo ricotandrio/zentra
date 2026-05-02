@@ -1,15 +1,26 @@
 import cron from 'node-cron';
 import { Logger } from 'pino';
-import { MarketAnalysisJob } from '../jobs/market-analysis.job';
+import { MarketAnalysisJob } from '../jobs';
 import { ITickerRepository } from '@/domain/repositories/ticker.repository';
 import { IEventBus } from '@/shared/event-bus';
 
+/** 
+ * Scheduler configuration interface 
+ */
 interface SchedulerConfig {
+  /** Logger instance for logging scheduler activity */
   logger: Logger;
+
+  /** Ticker repository for accessing subscribed tickers */
   tickerRepository: ITickerRepository;
+
+  /** Discord channel ID where market analysis results will be posted */
   channelId: string;
+
+  /** Event bus for publishing market analysis results */
   eventBus: IEventBus;
-  /** Cron expression (default: "0 18 * * *" = 18 PM daily) */
+
+  /** Optional cron schedule string (default: '0 18 * * *' for daily at 6 PM UTC+0) */
   schedule?: string;
 }
 

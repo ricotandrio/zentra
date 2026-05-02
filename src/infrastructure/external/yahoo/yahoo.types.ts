@@ -22,8 +22,13 @@ export interface NewsArticle {
 }
 
 export interface SentimentResult {
+  /** Overall sentiment label: bullish, bearish, or neutral */
   label: 'bullish' | 'bearish' | 'neutral';
-  score: number; // -1.0 (bearish) to +1.0 (bullish)
+
+  /** Sentiment score from -1.0 (very bearish) to +1.0 (very bullish) */
+  score: number;
+
+  /** Top signals contributing to sentiment (e.g. "strong buy", "weak sell") */
   signals: string[];
 }
 

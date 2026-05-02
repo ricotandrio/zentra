@@ -20,16 +20,17 @@ if (!marketSummaryChannelId) {
 
 // Initialize database and repository
 const db = initDatabase();
+logger.info('Database initialized');
+
 const tickerRepository = new SqliteTickerRepository(db);
 
-// Start market analysis scheduler (runs daily at 18 PM UTC)
 const scheduler = new MarketAnalysisScheduler({
   logger,
   tickerRepository,
   channelId: marketSummaryChannelId,
   eventBus,
-  schedule: '0 18 * * *', // Cron: 18 PM (6 PM) every day (UTC)
 });
+logger.info('Market analysis scheduler initialized with daily 6 PM schedule');
 
 scheduler.start();
 
