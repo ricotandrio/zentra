@@ -3,7 +3,7 @@ import { getLogger } from '@/shared';
 import { initializeEventBus } from '@/shared/event-bus';
 import { initDatabase } from '@/infrastructure/persistence/db/database';
 import { SqliteTickerRepository } from '@/infrastructure/persistence/db/sqlite-ticker.repository';
-import { MarketAnalysisScheduler } from '@/interfaces/worker/market-analysis';
+import { MarketAnalysisScheduler, MarketAnalysisSubscriber } from '@/interfaces/worker/market-analysis';
 
 const logger = getLogger();
 
@@ -31,6 +31,16 @@ const scheduler = new MarketAnalysisScheduler({
   eventBus,
 });
 logger.info('Market analysis scheduler initialized with daily 6 PM schedule');
+
+// Initialize event subscriber for market analysis events
+const subscriber = new MarketAnalysisSubscriber(
+  eventBus, 
+  logger, 
+  tickerRepository, 
+  marketSummaryChannelId
+);
+subscriber.subscribe();
+logger.info('Market analysis event subscriber initialized');
 
 scheduler.start();
 

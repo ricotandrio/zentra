@@ -3,15 +3,34 @@ import { Client as DiscordClient } from 'discord.js';
 import { Logger } from 'pino';
 import { ProcessMarketAnalysisResultsUseCase } from '@/application/use-cases/ticker/process-market-results.usecase';
 import { WorkerWebhookPayload } from '@/application/dto/market-results.dto';
+import { IEventBus, WorkerMarketAnalysisTriggerEvent } from '@/shared';
 
 export const triggerWorker = (
-  logger: Logger
+  logger: Logger,
+  eventBus?: IEventBus
 ) => {
   return async (req: Request, res: Response): Promise<void> => {
     try {
-      logger.info({ endpoint: '/workers/market-analysis' }, 'Triggering market analysis worker');
-      // Here you would trigger your background worker, e.g. by sending a message to a queue or invoking a serverless function
-      // For demonstration, we'll just return a success response
+      logger.info({ endpoint: '/workers/market-analysis' }, 'Market analysis worker triggered via API');
+
+      if (!eventBus) {
+        logger.warn('Event bus not available, cannot trigger worker');
+        res.status(503).json({
+          error: 'Event bus not initialized',
+        });
+        return;
+      }
+
+      // Publish worker trigger event
+      const event: WorkerMarketAnalysisTriggerEvent = {
+        type: 'worker:market-analysis:trigger',
+        source: 'api',
+        timestamp: new Date(),
+      };
+
+      await eventBus.publish(event);
+
+      logger.info('Market analysis worker trigger event published');
       res.status(200).json({
         success: true,
         message: 'Market analysis worker triggered',

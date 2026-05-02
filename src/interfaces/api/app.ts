@@ -17,6 +17,7 @@ export const createExpressApp = (
   app.use(express.json());
 
   app.use(createHealthRoutes(logger));
+
   app.use('/workers', createWorkerRoutes(logger, eventBus));
 
   if (discordClient && eventBus) {
