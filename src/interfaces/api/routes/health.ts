@@ -7,7 +7,7 @@ export const createHealthRoutes = (
 ): Router => {
   const router = Router();
 
-  router.post('/ping', pingController(logger));
+  router.get('/ping', pingController(logger));
 
   return router;
 };

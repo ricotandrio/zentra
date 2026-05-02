@@ -2,19 +2,20 @@ import cron from 'node-cron';
 import { Logger } from 'pino';
 import { MarketAnalysisJob } from '../jobs/market-analysis.job';
 import { ITickerRepository } from '@/domain/repositories/ticker.repository';
+import { IEventBus } from '@/shared/event-bus';
 
 interface SchedulerConfig {
   logger: Logger;
   tickerRepository: ITickerRepository;
   channelId: string;
-  webhookUrl: string;
+  eventBus: IEventBus;
   /** Cron expression (default: "0 18 * * *" = 18 PM daily) */
   schedule?: string;
 }
 
 /**
  * Market Analysis Scheduler
- * Runs market analysis job on a schedule and sends results to API webhook
+ * Runs market analysis job on a schedule and publishes results via event bus
  */
 export class MarketAnalysisScheduler {
   private task: cron.ScheduledTask | null = null;
@@ -42,7 +43,6 @@ export class MarketAnalysisScheduler {
   stop(): void {
     if (this.task) {
       this.task.stop();
-      this.task.destroy();
       this.config.logger.info('Market analysis scheduler stopped');
     }
   }

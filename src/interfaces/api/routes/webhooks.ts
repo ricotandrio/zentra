@@ -11,7 +11,10 @@ export const createWebhookRoutes = (
 
   /**
    * POST /webhooks/market-results
-   * Receive market analysis results from worker
+   * DEPRECATED: Use event bus instead (market-analysis:complete event)
+   * Kept for backward compatibility with external integrations
+   * 
+   * Receive market analysis results from external sources
    * 
    * Body: WorkerWebhookPayload
    * {

@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { AnalyzeMarketUseCase, GetSubscribedTickersUseCase } from '@/application/use-cases/ticker';
 import { ITickerRepository } from '@/domain/repositories/ticker.repository';
+import { IEventBus } from '@/shared/event-bus';
 
 export const data = new SlashCommandBuilder()
   .setName('market-summary')
@@ -18,7 +19,8 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(
   interaction: ChatInputCommandInteraction,
-  tickerRepository: ITickerRepository
+  tickerRepository: ITickerRepository,
+  _eventBus?: IEventBus
 ): Promise<void> {
   await interaction.deferReply();
 

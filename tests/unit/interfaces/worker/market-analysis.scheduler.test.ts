@@ -1,4 +1,5 @@
 import { MarketAnalysisScheduler } from '@/interfaces/worker/schedulers/market-analysis.scheduler';
+import { IEventBus } from '@/shared/event-bus';
 import { Logger } from 'pino';
 
 // Mock node-cron module
@@ -13,6 +14,7 @@ const mockSchedule = cron.schedule as jest.MockedFunction<typeof cron.schedule>;
 describe('MarketAnalysisScheduler', () => {
   let mockLogger: Logger;
   let mockTickerRepository: any;
+  let mockEventBus: IEventBus;
   let mockScheduledTask: any;
 
   beforeEach(() => {
@@ -30,10 +32,16 @@ describe('MarketAnalysisScheduler', () => {
       remove: jest.fn(),
     };
 
+    // Mock event bus
+    mockEventBus = {
+      subscribe: jest.fn(),
+      publish: jest.fn().mockResolvedValue(undefined),
+      clear: jest.fn(),
+    } as any;
+
     // Mock scheduled task
     mockScheduledTask = {
       stop: jest.fn(),
-      destroy: jest.fn(),
     };
 
     mockSchedule.mockReturnValue(mockScheduledTask);
@@ -52,7 +60,7 @@ describe('MarketAnalysisScheduler', () => {
         logger: mockLogger,
         tickerRepository: mockTickerRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Act
@@ -76,7 +84,7 @@ describe('MarketAnalysisScheduler', () => {
         logger: mockLogger,
         tickerRepository: mockTickerRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
         schedule: customSchedule,
       });
 
@@ -106,11 +114,11 @@ describe('MarketAnalysisScheduler', () => {
         logger: mockLogger,
         tickerRepository: mockTickerRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
-      // Mock fetch to simulate job failure
-      global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
+      // Mock repository to fail
+      mockTickerRepository.getAll.mockRejectedValue(new Error('Database error'));
 
       scheduler.start();
 
@@ -126,13 +134,13 @@ describe('MarketAnalysisScheduler', () => {
   });
 
   describe('stop', () => {
-    it('should stop and destroy scheduled task', () => {
+    it('should stop scheduled task', () => {
       // Arrange
       const scheduler = new MarketAnalysisScheduler({
         logger: mockLogger,
         tickerRepository: mockTickerRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       scheduler.start();
@@ -142,7 +150,6 @@ describe('MarketAnalysisScheduler', () => {
 
       // Assert
       expect(mockScheduledTask.stop).toHaveBeenCalled();
-      expect(mockScheduledTask.destroy).toHaveBeenCalled();
       expect(mockLogger.info).toHaveBeenCalledWith('Market analysis scheduler stopped');
     });
 
@@ -152,7 +159,7 @@ describe('MarketAnalysisScheduler', () => {
         logger: mockLogger,
         tickerRepository: mockTickerRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Act - call stop without start
@@ -168,7 +175,7 @@ describe('MarketAnalysisScheduler', () => {
         logger: mockLogger,
         tickerRepository: mockTickerRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Act

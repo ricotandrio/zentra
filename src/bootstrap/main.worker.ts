@@ -1,21 +1,20 @@
 import { env } from '@/config';
 import { getLogger } from '@/shared';
+import { initializeEventBus } from '@/shared/event-bus';
 import { initDatabase } from '@/infrastructure/persistence/db/database';
 import { SqliteTickerRepository } from '@/infrastructure/persistence/db/sqlite-ticker.repository';
 import { MarketAnalysisScheduler } from '@/interfaces/worker/schedulers/market-analysis.scheduler';
 
 const logger = getLogger();
 
+// Initialize event bus early
+const eventBus = initializeEventBus();
+logger.info('Event bus initialized');
+
 const marketSummaryChannelId = env.DISCORD.DISCORD_STANDUP_CHANNEL_ID;
-const webhookUrl = env.WEBHOOK_BASE_URL + '/webhooks/market-results';
 
 if (!marketSummaryChannelId) {
   logger.error('Missing DISCORD_STANDUP_CHANNEL_ID environment variable');
-  process.exit(1);
-}
-
-if (!webhookUrl) {
-  logger.error('Missing WEBHOOK_BASE_URL environment variable');
   process.exit(1);
 }
 
@@ -28,13 +27,13 @@ const scheduler = new MarketAnalysisScheduler({
   logger,
   tickerRepository,
   channelId: marketSummaryChannelId,
-  webhookUrl,
+  eventBus,
   schedule: '0 18 * * *', // Cron: 18 PM (6 PM) every day (UTC)
 });
 
 scheduler.start();
 
-logger.info({ webhookUrl }, 'Worker started with market analysis scheduler');
+logger.info({ eventBus: 'initialized' }, 'Worker started with market analysis scheduler');
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

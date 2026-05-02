@@ -2,15 +2,12 @@ import { MarketAnalysisJob } from '@/interfaces/worker/jobs/market-analysis.job'
 import { MarketAnalysisScheduler } from '@/interfaces/worker/schedulers/market-analysis.scheduler';
 import { Ticker } from '@/domain/entities/ticker.entity';
 import { getLogger } from '@/shared/logger';
-import { WorkerWebhookPayload } from '@/application/dto/market-results.dto';
+import { IEventBus } from '@/shared/event-bus';
 
 import singleTickerRequest from '../../../mocks/worker/market-analysis-single-request.json';
-import multipleTickersRequest from '../../../mocks/worker/market-analysis-multiple-request.json';
-import webhookSuccessResponse from '../../../mocks/worker/webhook-success-response.json';
-import webhookServerErrorResponse from '../../../mocks/worker/webhook-server-error-response.json';
 
 describe('Worker Integration Tests', () => {
-  let mockFetch: jest.Mock;
+  let mockEventBus: IEventBus;
   let logger: any;
 
   beforeAll(() => {
@@ -18,8 +15,14 @@ describe('Worker Integration Tests', () => {
   });
 
   beforeEach(() => {
-    mockFetch = jest.fn();
-    global.fetch = mockFetch;
+    // Mock event bus
+    mockEventBus = {
+      subscribe: jest.fn(),
+      publish: jest.fn().mockResolvedValue(undefined),
+      clear: jest.fn(),
+    } as any;
+
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
@@ -39,59 +42,10 @@ describe('Worker Integration Tests', () => {
         logger,
         tickerRepository: mockRepository,
         channelId: 'test-channel-123',
-        webhookUrl: 'http://localhost:3000/webhooks/market-results',
+        eventBus: mockEventBus,
       });
 
       expect(job).toBeDefined();
-    });
-
-    it('should handle execution with mocked repository and webhook', async () => {
-      const mockTickers = [
-        Ticker.create(multipleTickersRequest[0].symbol, multipleTickersRequest[0].name),
-        Ticker.create(multipleTickersRequest[1].symbol, multipleTickersRequest[1].name),
-      ];
-
-      const mockRepository = {
-        add: jest.fn(),
-        getAll: jest.fn().mockResolvedValue(mockTickers),
-        exists: jest.fn(),
-        remove: jest.fn(),
-      };
-
-      const mockResponse = {
-        ok: webhookSuccessResponse.ok,
-        status: webhookSuccessResponse.status,
-        json: jest.fn().mockResolvedValue(webhookSuccessResponse.body),
-        text: jest.fn(),
-      };
-      mockFetch.mockResolvedValue(mockResponse);
-
-      const job = new MarketAnalysisJob({
-        logger,
-        tickerRepository: mockRepository,
-        channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
-      });
-
-      // Act
-      await job.execute();
-
-      // Assert
-      expect(mockFetch).toHaveBeenCalledTimes(1);
-      expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3000/webhook',
-        expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        })
-      );
-
-      const callArgs = mockFetch.mock.calls[0];
-      const payload = JSON.parse(callArgs[1].body) as WorkerWebhookPayload;
-
-      expect(payload.source).toBe('market-analysis-job');
-      expect(payload.channelId).toBe('test-channel');
-      expect(payload.results).toHaveLength(2);
     });
 
     it('should skip execution when no tickers are available', async () => {
@@ -107,17 +61,17 @@ describe('Worker Integration Tests', () => {
         logger,
         tickerRepository: mockRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Act
       await job.execute();
 
-      // Assert
-      expect(mockFetch).not.toHaveBeenCalled();
+      // Assert - no event published when no tickers
+      expect(mockEventBus.publish).not.toHaveBeenCalled();
     });
 
-    it('should propagate repository errors', async () => {
+    it('should propagate and publish error event on repository errors', async () => {
       // Arrange
       const mockRepository = {
         add: jest.fn(),
@@ -130,87 +84,18 @@ describe('Worker Integration Tests', () => {
         logger,
         tickerRepository: mockRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Act & Assert
       await expect(job.execute()).rejects.toThrow('Database connection failed');
-    });
-
-    it('should propagate webhook errors', async () => {
-      // Arrange
-      const mockTickers = [Ticker.create(singleTickerRequest.symbol, singleTickerRequest.name)];
-
-      const mockRepository = {
-        add: jest.fn(),
-        getAll: jest.fn().mockResolvedValue(mockTickers),
-        exists: jest.fn(),
-        remove: jest.fn(),
-      };
-
-      const mockResponse = {
-        ok: webhookServerErrorResponse.ok,
-        status: webhookServerErrorResponse.status,
-        text: jest.fn().mockResolvedValue(webhookServerErrorResponse.body),
-      };
-      mockFetch.mockResolvedValue(mockResponse);
-
-      const job = new MarketAnalysisJob({
-        logger,
-        tickerRepository: mockRepository,
-        channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
-      });
-
-      // Act & Assert
-      await expect(job.execute()).rejects.toThrow('Webhook returned 500');
-    });
-
-    it('should build correct webhook payload with ticker data', async () => {
-      // Arrange
-      const mockTickers = [
-        Ticker.create(multipleTickersRequest[0].symbol, multipleTickersRequest[0].name),
-        Ticker.create(multipleTickersRequest[1].symbol, multipleTickersRequest[1].name),
-      ];
-
-      const mockRepository = {
-        add: jest.fn(),
-        getAll: jest.fn().mockResolvedValue(mockTickers),
-        exists: jest.fn(),
-        remove: jest.fn(),
-      };
-
-      mockFetch.mockResolvedValue({
-        ok: webhookSuccessResponse.ok,
-        status: webhookSuccessResponse.status,
-        json: jest.fn().mockResolvedValue(webhookSuccessResponse.body),
-        text: jest.fn(),
-      });
-
-      const job = new MarketAnalysisJob({
-        logger,
-        tickerRepository: mockRepository,
-        channelId: 'integration-test-channel',
-        webhookUrl: 'http://api.test/webhook',
-      });
-
-      // Act
-      await job.execute();
-
-      // Assert
-      expect(mockFetch).toHaveBeenCalled();
-      const callArgs = mockFetch.mock.calls[0];
-      const payload = JSON.parse(callArgs[1].body);
-
-      expect(payload).toHaveProperty('source', 'market-analysis-job');
-      expect(payload).toHaveProperty('channelId', 'integration-test-channel');
-      expect(payload).toHaveProperty('timestamp');
-      expect(payload).toHaveProperty('results');
-      expect(Array.isArray(payload.results)).toBe(true);
-
-      // Verify timestamp is valid ISO string
-      const timestamp = new Date(payload.timestamp);
-      expect(timestamp.getTime()).not.toBeNaN();
+      
+      // Verify error event was published
+      expect(mockEventBus.publish).toHaveBeenCalledTimes(1);
+      const errorEvent = (mockEventBus.publish as jest.Mock).mock.calls[0][0];
+      expect(errorEvent.type).toBe('market-analysis:error');
+      expect(errorEvent.source).toBe('worker');
+      expect(errorEvent.data.error).toBe('Database connection failed');
     });
   });
 
@@ -229,7 +114,7 @@ describe('Worker Integration Tests', () => {
         logger,
         tickerRepository: mockRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Assert - should not throw
@@ -249,7 +134,7 @@ describe('Worker Integration Tests', () => {
         logger,
         tickerRepository: mockRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
         schedule: '0 18 * * *',
       });
 
@@ -276,7 +161,7 @@ describe('Worker Integration Tests', () => {
         logger,
         tickerRepository: mockRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
         schedule: customSchedule,
       });
 
@@ -300,7 +185,7 @@ describe('Worker Integration Tests', () => {
         logger,
         tickerRepository: mockRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Act & Assert
@@ -325,7 +210,7 @@ describe('Worker Integration Tests', () => {
         logger,
         tickerRepository: mockRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Act & Assert - should not throw even without start
@@ -334,7 +219,7 @@ describe('Worker Integration Tests', () => {
   });
 
   describe('Worker Job and Scheduler Integration', () => {
-    it('should create job from scheduler configuration', async () => {
+    it('should create job from scheduler configuration', () => {
       // Arrange
       const mockTickers = [Ticker.create(singleTickerRequest.symbol, singleTickerRequest.name)];
       const mockRepository = {
@@ -344,18 +229,11 @@ describe('Worker Integration Tests', () => {
         remove: jest.fn(),
       };
 
-      mockFetch.mockResolvedValue({
-        ok: webhookSuccessResponse.ok,
-        status: webhookSuccessResponse.status,
-        json: jest.fn().mockResolvedValue(webhookSuccessResponse.body),
-        text: jest.fn(),
-      });
-
       const scheduler = new MarketAnalysisScheduler({
         logger,
         tickerRepository: mockRepository,
         channelId: 'integration-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Act
@@ -379,7 +257,7 @@ describe('Worker Integration Tests', () => {
         logger,
         tickerRepository: mockRepository,
         channelId: 'error-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Act & Assert - should not throw even if job fails

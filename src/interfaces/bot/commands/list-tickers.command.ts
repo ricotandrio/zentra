@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { GetSubscribedTickersUseCase } from '@/application/use-cases/ticker';
 import { ITickerRepository } from '@/domain/repositories/ticker.repository';
+import { IEventBus } from '@/shared/event-bus';
 
 export const data = new SlashCommandBuilder()
   .setName('list-tickers')
@@ -8,7 +9,8 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(
   interaction: ChatInputCommandInteraction,
-  tickerRepository: ITickerRepository
+  tickerRepository: ITickerRepository,
+  _eventBus?: IEventBus
 ): Promise<void> {
   try {
     const useCase = new GetSubscribedTickersUseCase(tickerRepository);

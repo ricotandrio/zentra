@@ -1,16 +1,14 @@
 import { MarketAnalysisJob } from '@/interfaces/worker/jobs/market-analysis.job';
 import { GetSubscribedTickersUseCase, AnalyzeMarketUseCase } from '@/application/use-cases/ticker';
 import { Ticker } from '@/domain/entities/ticker.entity';
-import { WorkerWebhookPayload } from '@/application/dto/market-results.dto';
 import { Logger } from 'pino';
+import { IEventBus } from '@/shared/event-bus';
 
 // Import mocks directly from JSON files
 import singleTickerRequest from '../../../mocks/worker/market-analysis-single-request.json';
 import multipleTickersRequest from '../../../mocks/worker/market-analysis-multiple-request.json';
 import singleAnalysisResponse from '../../../mocks/worker/market-analysis-single-response.json';
 import multipleAnalysisResponse from '../../../mocks/worker/market-analysis-single-response.json';
-import webhookSuccessResponse from '../../../mocks/worker/webhook-success-response.json';
-import webhookServerErrorResponse from '../../../mocks/worker/webhook-server-error-response.json';
 
 // Mock dependencies
 jest.mock('@/application/use-cases/ticker');
@@ -25,6 +23,7 @@ const mockAnalyzeMarketUseCase = AnalyzeMarketUseCase as jest.MockedClass<
 describe('MarketAnalysisJob', () => {
   let mockLogger: Logger;
   let mockTickerRepository: any;
+  let mockEventBus: IEventBus;
   let mockFetch: jest.Mock;
 
   beforeEach(() => {
@@ -41,6 +40,13 @@ describe('MarketAnalysisJob', () => {
       exists: jest.fn(),
       remove: jest.fn(),
     };
+
+    // Mock event bus
+    mockEventBus = {
+      subscribe: jest.fn(),
+      publish: jest.fn().mockResolvedValue(undefined),
+      clear: jest.fn(),
+    } as any;
 
     // Mock fetch globally
     mockFetch = jest.fn();
@@ -63,7 +69,7 @@ describe('MarketAnalysisJob', () => {
         logger: mockLogger,
         tickerRepository: mockTickerRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Act
@@ -74,19 +80,12 @@ describe('MarketAnalysisJob', () => {
       expect(mockLogger.info).toHaveBeenCalledWith('No tickers to analyze');
     });
 
-    it('should analyze tickers and send webhook', async () => {
+    it('should analyze tickers and publish event', async () => {
       // Arrange
       const mockTickers = [
         Ticker.create(multipleTickersRequest[0].symbol, multipleTickersRequest[0].name),
         Ticker.create(multipleTickersRequest[1].symbol, multipleTickersRequest[1].name),
       ];
-
-      const mockResponse = {
-        ok: webhookSuccessResponse.ok,
-        status: webhookSuccessResponse.status,
-        json: jest.fn().mockResolvedValue(webhookSuccessResponse.body),
-        text: jest.fn(),
-      };
 
       mockGetSubscribedTickersUseCase.prototype.execute = jest
         .fn()
@@ -94,13 +93,12 @@ describe('MarketAnalysisJob', () => {
       mockAnalyzeMarketUseCase.prototype.analyzeMultipleTickers = jest
         .fn()
         .mockResolvedValue(multipleAnalysisResponse.multiple);
-      mockFetch.mockResolvedValue(mockResponse);
 
       const job = new MarketAnalysisJob({
         logger: mockLogger,
         tickerRepository: mockTickerRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Act
@@ -112,13 +110,10 @@ describe('MarketAnalysisJob', () => {
         { count: 2 },
         'Analyzing tickers'
       );
-      expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3000/webhook',
+      expect(mockEventBus.publish).toHaveBeenCalledWith(
         expect.objectContaining({
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          type: 'market-analysis:complete',
+          source: 'worker',
         })
       );
       expect(mockLogger.info).toHaveBeenCalledWith(
@@ -127,36 +122,34 @@ describe('MarketAnalysisJob', () => {
       );
     });
 
-    it('should handle webhook errors', async () => {
+    it('should publish error event on use case failure', async () => {
       // Arrange
-      const mockTickers = [Ticker.create(singleTickerRequest.symbol, singleTickerRequest.name)];
-
-      const mockResponse = {
-        ok: webhookServerErrorResponse.ok,
-        status: webhookServerErrorResponse.status,
-        text: jest.fn().mockResolvedValue(webhookServerErrorResponse.body),
-      };
+      const testError = new Error('Analysis failed');
 
       mockGetSubscribedTickersUseCase.prototype.execute = jest
         .fn()
-        .mockResolvedValue(mockTickers);
+        .mockResolvedValue([Ticker.create(singleTickerRequest.symbol, singleTickerRequest.name)]);
       mockAnalyzeMarketUseCase.prototype.analyzeMultipleTickers = jest
         .fn()
-        .mockResolvedValue(singleAnalysisResponse.single);
-      mockFetch.mockResolvedValue(mockResponse);
+        .mockRejectedValue(testError);
 
       const job = new MarketAnalysisJob({
         logger: mockLogger,
         tickerRepository: mockTickerRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Act & Assert
-      await expect(job.execute()).rejects.toThrow('Webhook returned 500');
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.any(Error),
-        'Error executing market analysis job'
+      await expect(job.execute()).rejects.toThrow('Analysis failed');
+      expect(mockEventBus.publish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'market-analysis:error',
+          source: 'worker',
+          data: expect.objectContaining({
+            error: 'Analysis failed',
+          }),
+        })
       );
     });
 
@@ -170,7 +163,7 @@ describe('MarketAnalysisJob', () => {
         logger: mockLogger,
         tickerRepository: mockTickerRepository,
         channelId: 'test-channel',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Act & Assert
@@ -181,16 +174,9 @@ describe('MarketAnalysisJob', () => {
       );
     });
 
-    it('should create correct webhook payload structure', async () => {
+    it('should publish correct event structure', async () => {
       // Arrange
       const mockTickers = [Ticker.create(singleTickerRequest.symbol, singleTickerRequest.name)];
-
-      const mockResponse = {
-        ok: webhookSuccessResponse.ok,
-        status: webhookSuccessResponse.status,
-        json: jest.fn().mockResolvedValue(webhookSuccessResponse.body),
-        text: jest.fn(),
-      };
 
       mockGetSubscribedTickersUseCase.prototype.execute = jest
         .fn()
@@ -198,29 +184,30 @@ describe('MarketAnalysisJob', () => {
       mockAnalyzeMarketUseCase.prototype.analyzeMultipleTickers = jest
         .fn()
         .mockResolvedValue(singleAnalysisResponse.single);
-      mockFetch.mockResolvedValue(mockResponse);
 
       const job = new MarketAnalysisJob({
         logger: mockLogger,
         tickerRepository: mockTickerRepository,
         channelId: 'test-channel-id',
-        webhookUrl: 'http://localhost:3000/webhook',
+        eventBus: mockEventBus,
       });
 
       // Act
       await job.execute();
 
       // Assert
-      const callArgs = mockFetch.mock.calls[0];
-      const payload = JSON.parse(callArgs[1].body) as WorkerWebhookPayload;
-
-      expect(payload).toMatchObject({
-        source: 'market-analysis-job',
-        channelId: 'test-channel-id',
+      const publishCall = (mockEventBus.publish as jest.Mock).mock.calls[0][0];
+      expect(publishCall).toMatchObject({
+        type: 'market-analysis:complete',
+        source: 'worker',
+        data: expect.objectContaining({
+          channelId: 'test-channel-id',
+          results: expect.any(Array),
+        }),
       });
-      expect(payload.timestamp).toBeDefined();
-      expect(payload.results).toHaveLength(1);
-      expect(payload.results[0]).toMatchObject({
+      expect(publishCall.data.timestamp).toBeDefined();
+      expect(publishCall.data.results).toHaveLength(1);
+      expect(publishCall.data.results[0]).toMatchObject({
         ticker: 'BBCA.JK',
         price: 7500,
         changePercent: 1.5,

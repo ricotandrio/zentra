@@ -6,12 +6,14 @@ import * as addTicker from './commands/add-ticker.command';
 import * as listTickers from './commands/list-tickers.command';
 import * as marketSummary from './commands/market-summary.command';
 import { ITickerRepository } from '@/domain/repositories/ticker.repository';
+import { IEventBus } from '@/shared/event-bus';
 
 export interface BotCommandWithDeps {
   data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder;
   execute: (
     interaction: ChatInputCommandInteraction,
-    tickerRepository?: ITickerRepository
+    tickerRepository?: ITickerRepository,
+    eventBus?: IEventBus
   ) => Promise<void>;
   autocomplete?: (interaction: AutocompleteInteraction) => Promise<void>;
 }
@@ -58,7 +60,8 @@ export const deployBot = async (
 const registerHandlers = (
   client: Client,
   logger: Logger,
-  tickerRepository?: ITickerRepository
+  tickerRepository?: ITickerRepository,
+  eventBus?: IEventBus
 ) => {
   client.on('messageCreate', async (message) => {
     if (
@@ -74,7 +77,7 @@ const registerHandlers = (
       return;
     }
 
-    await handleNaturalLanguageMessage(message, logger);
+    await handleNaturalLanguageMessage(message, logger, eventBus);
   });
 
   client.on('interactionCreate', async (interaction) => {
@@ -84,7 +87,7 @@ const registerHandlers = (
     if (!command) return;
 
     try {
-      await command.execute(interaction, tickerRepository);
+      await command.execute(interaction, tickerRepository, eventBus);
     } catch (error) {
       logger.error(error, `Error executing command: ${interaction.commandName}`);
       const errorMessage = '❌ An unexpected error occurred while executing this command.';
@@ -96,7 +99,7 @@ const registerHandlers = (
     }
   });
 
-  client.once('ready', () => {
+  client.once('clientReady', () => {
     logger.info(`Bot logged in as ${client.user?.tag}`);
   });
 
@@ -111,7 +114,8 @@ export const startBot = async (
   guildId: string,
   standupChannelId: string,
   logger: Logger,
-  tickerRepository?: ITickerRepository
+  tickerRepository?: ITickerRepository,
+  eventBus?: IEventBus
 ) => {
   const client = new Client({
     intents: [
@@ -126,7 +130,7 @@ export const startBot = async (
 
   await deployBot(rest, clientId, guildId, logger);
 
-  registerHandlers(client, logger, tickerRepository);
+  registerHandlers(client, logger, tickerRepository, eventBus);
 
   await client.login(botToken);
   logger.info('Discord bot started');
