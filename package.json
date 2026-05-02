@@ -9,6 +9,7 @@
   "keywords": [
     "bot"
   ],
+  "type": "module",
   "author": "@ricotandrio",
   "scripts": {
     "prepare": "husky install",

@@ -37,7 +37,16 @@ export const deployBot = async (
   logger: Logger
 ) => {
   try {
-    const body = Object.values(botCommands).map((cmd) => cmd.data.toJSON());
+    const body = Object
+      .values(botCommands)
+      .filter(cmd => {
+        if (!cmd || !cmd.data) {
+          console.error('Invalid command detected:', cmd);
+          return false;
+        }
+        return true;
+      })
+      .map(cmd => cmd.data.toJSON());
 
     if (body.length === 0) {
       logger.warn('No bot commands to deploy');

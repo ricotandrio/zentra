@@ -4,7 +4,7 @@ import { Logger } from 'pino';
 import { IEventBus } from '@/shared/event-bus';
 import { createHealthRoutes } from './routes/health';
 import { createWorkerRoutes } from './routes/workers';
-import path from 'node:path';
+import path from 'path';
 
 export const createExpressApp = (
   logger: Logger,
@@ -15,7 +15,7 @@ export const createExpressApp = (
   app.use(express.json());
   app.use(createHealthRoutes(logger));
   app.use('/workers', createWorkerRoutes(logger, eventBus));
-  app.use('/web', express.static(path.join(__dirname, '../../interfaces/web/public')));
+  app.use('/web', express.static(path.join(process.cwd(), '../../interfaces/web/public')));
 
   return app;
 };
