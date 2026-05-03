@@ -6,10 +6,6 @@ on:
     types: [completed]
 
   workflow_dispatch:
-    inputs:
-      image_tag:
-        description: "Image tag to deploy"
-        required: false
 
 jobs:
   deploy:
@@ -32,17 +28,6 @@ jobs:
 
           ssh-keyscan -H "${{ secrets.AZURE_VM_IP }}" >> ~/.ssh/known_hosts
 
-      - name: Determine image tag
-        id: tag
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ github.event.inputs.image_tag }}"
-          else
-            TAG="latest"
-          fi
-
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-
       - name: Deploy via SSH
         run: |
           ssh -i vm_key.pem azureuser@${{ secrets.AZURE_VM_IP }} << EOF
@@ -55,11 +40,9 @@ jobs:
               -u "${{ secrets.ACR_USERNAME }}" \
               --password-stdin
 
-            IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:latest"
-
-            echo "Pulling image: $IMAGE"
+            echo "Pulling image"
             
-            docker pull zentraregistry.azurecr.io/zentra:latest
+            docker pull ${{ secrets.ACR_LOGIN_SERVER }}/${{ IMAGE_APP_NAME }}:latest
 
             echo "Stopping existing container (if any)"
 
@@ -86,5 +69,5 @@ jobs:
               -e GITHUB_REPOSITORY_NAME="${{ vars.GH_REPOSITORY_NAME }}" \
               -e WEBHOOK_BASE_URL="${{ secrets.WEBHOOK_BASE_URL }}" \
               -e API_BASE_URL="${{ secrets.API_BASE_URL }}" \
-              zentraregistry.azurecr.io/zentra:latest
+              ${{ secrets.ACR_LOGIN_SERVER }}/${{ IMAGE_APP_NAME }}:latest
           EOF
