@@ -51,11 +51,13 @@ jobs:
 
             IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:${{ steps.tag.outputs.tag }}"
 
-            echo "Logging in to ACR and pulling image: $IMAGE"
+            echo "Logging in to ACR"
 
             echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} \
               -u "${{ secrets.ACR_USERNAME }}" \
               --password-stdin
+
+            echo "Pulling image: $IMAGE"
 
             docker pull $IMAGE
 
