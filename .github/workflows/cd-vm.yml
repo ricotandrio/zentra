@@ -43,13 +43,14 @@ jobs:
       - name: Deploy via SSH
         run: |
           ssh -i vm_key.pem azureuser@${{ secrets.AZURE_VM_IP }} << EOF
+            echo "Connected to VM. Deploying application..."
             set -e
 
-            IMAGE="${{ vars.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:${{ steps.tag.outputs.tag }}"
+            IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:${{ steps.tag.outputs.tag }}"
 
             echo "Deploying $IMAGE"
 
-            docker login ${{ vars.ACR_LOGIN_SERVER }} \
+            docker login ${{ secrets.ACR_LOGIN_SERVER }} \
               -u ${{ secrets.ACR_USERNAME }} \
               -p ${{ secrets.ACR_PASSWORD }}
 
@@ -66,15 +67,15 @@ jobs:
               -e EXPRESS_PORT=${{ vars.EXPRESS_PORT }} \
               -e DISCORD_BOT_TOKEN="${{ secrets.DISCORD_BOT_TOKEN }}" \
               -e DISCORD_CLIENT_ID="${{ secrets.DISCORD_CLIENT_ID }}" \
-              -e DISCORD_GUILD_ID="${{ vars.DISCORD_GUILD_ID }}" \
-              -e DISCORD_STANDUP_CHANNEL_ID="${{ vars.DISCORD_STANDUP_CHANNEL_ID }}" \
+              -e DISCORD_GUILD_ID="${{ secrets.DISCORD_GUILD_ID }}" \
+              -e DISCORD_STANDUP_CHANNEL_ID="${{ secrets.DISCORD_STANDUP_CHANNEL_ID }}" \
               -e LLM_API_KEY="${{ secrets.LLM_API_KEY }}" \
               -e LLM_PROVIDER_NAME="${{ vars.LLM_PROVIDER_NAME }}" \
               -e LLM_MODEL_NAME="${{ vars.LLM_MODEL_NAME }}" \
               -e GITHUB_PERSONAL_ACCESS_TOKEN="${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}" \
               -e GITHUB_OWNER_USERNAME="${{ vars.GH_OWNER_USERNAME }}" \
               -e GITHUB_REPOSITORY_NAME="${{ vars.GH_REPOSITORY_NAME }}" \
-              -e WEBHOOK_BASE_URL="${{ vars.WEBHOOK_BASE_URL }}" \
-              -e API_BASE_URL="${{ vars.API_BASE_URL }}" \
+              -e WEBHOOK_BASE_URL="${{ secrets.WEBHOOK_BASE_URL }}" \
+              -e API_BASE_URL="${{ secrets.API_BASE_URL }}" \
               $IMAGE
           EOF
