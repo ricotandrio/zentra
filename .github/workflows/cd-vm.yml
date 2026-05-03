@@ -73,7 +73,7 @@ jobs:
               -e LLM_MODEL_NAME="${{ vars.LLM_MODEL_NAME }}" \
               -e GITHUB_PERSONAL_ACCESS_TOKEN="${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}" \
               -e GITHUB_OWNER_USERNAME="${{ vars.GH_OWNER_USERNAME }}" \
-              -e GITHUB_REPO_NAME="${{ vars.GH_REPO_NAME }}" \
+              -e GITHUB_REPOSITORY_NAME="${{ vars.GH_REPOSITORY_NAME }}" \
               -e WEBHOOK_BASE_URL="${{ vars.WEBHOOK_BASE_URL }}" \
               -e API_BASE_URL="${{ vars.API_BASE_URL }}" \
               $IMAGE
