@@ -6,13 +6,10 @@ on:
     types: [completed]
 
   workflow_dispatch:
-    inputs:
-      image_tag:
-        description: "Image tag to deploy (e.g. v1.2.3 or commit SHA)"
-        required: false
 
 jobs:
   deploy:
+    environment: STG
     name: Deploy to VM
     runs-on: ubuntu-latest
 
@@ -22,60 +19,55 @@ jobs:
         github.event.workflow_run.conclusion == 'success'
       }}
 
-    steps:
-      - name: Setup SSH key
+    steps:   
+      - name: Setup SSH trust
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.AZURE_ZENTRA }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.VM_IP }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.AZURE_ZENTRA }}" > vm_key.pem
+          chmod 400 vm_key.pem
 
-      - name: Determine image tag
-        id: tag
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ github.event.inputs.image_tag }}"
-          else
-            TAG="latest"
-          fi
-
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          ssh-keyscan -H "${{ secrets.AZURE_VM_IP }}" >> ~/.ssh/known_hosts
 
       - name: Deploy via SSH
         run: |
-          ssh azureuser@${{ secrets.VM_IP }} << EOF
+          ssh -i vm_key.pem azureuser@${{ secrets.AZURE_VM_IP }} << EOF
+            echo "Connected to VM. Deploying application..."
             set -e
 
-            IMAGE="${{ vars.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:${{ steps.tag.outputs.tag }}"
+            echo "Logging in to ACR"
 
-            echo "Deploying $IMAGE"
+            echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} \
+              -u "${{ secrets.ACR_USERNAME }}" \
+              --password-stdin
 
-            docker login ${{ vars.ACR_LOGIN_SERVER }} \
-              -u ${{ secrets.ACR_USERNAME }} \
-              -p ${{ secrets.ACR_PASSWORD }}
+            echo "Pulling image"
+            
+            docker pull ${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:latest
 
-            docker pull $IMAGE
+            echo "Stopping existing container (if any)"
 
             docker stop zentra || true
             docker rm zentra || true
 
+            echo "Running new container with environment variables..."
+
             docker run -d \
               --restart unless-stopped \
               --name zentra \
-              -p 3000:3000 \
+              -p ${{ vars.EXPRESS_PORT }}:${{ vars.EXPRESS_PORT }} \
               -e NODE_ENV=${{ vars.NODE_ENV }} \
               -e EXPRESS_PORT=${{ vars.EXPRESS_PORT }} \
-              -e DISCORD_BOT_TOKEN="${{ secrets.DISCORD_BOT_TOKEN }}"
+              -e DISCORD_BOT_TOKEN="${{ secrets.DISCORD_BOT_TOKEN }}" \
               -e DISCORD_CLIENT_ID="${{ secrets.DISCORD_CLIENT_ID }}" \
-              -e DISCORD_GUILD_ID="${{ vars.DISCORD_GUILD_ID }}" \
-              -e DISCORD_STANDUP_CHANNEL_ID="${{ vars.DISCORD_STANDUP_CHANNEL_ID }}" \
+              -e DISCORD_GUILD_ID="${{ secrets.DISCORD_GUILD_ID }}" \
+              -e DISCORD_STANDUP_CHANNEL_ID="${{ secrets.DISCORD_STANDUP_CHANNEL_ID }}" \
               -e LLM_API_KEY="${{ secrets.LLM_API_KEY }}" \
               -e LLM_PROVIDER_NAME="${{ vars.LLM_PROVIDER_NAME }}" \
               -e LLM_MODEL_NAME="${{ vars.LLM_MODEL_NAME }}" \
               -e GITHUB_PERSONAL_ACCESS_TOKEN="${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}" \
               -e GITHUB_OWNER_USERNAME="${{ vars.GH_OWNER_USERNAME }}" \
-              -e GITHUB_REPO_NAME="${{ vars.GH_REPO_NAME }}" \
-              -e WEBHOOK_BASE_URL="${{ vars.WEBHOOK_BASE_URL }}" \
-              -e API_BASE_URL="${{ vars.API_BASE_URL }}" \
-              $IMAGE
+              -e GITHUB_REPOSITORY_NAME="${{ vars.GH_REPOSITORY_NAME }}" \
+              -e WEBHOOK_BASE_URL="${{ secrets.WEBHOOK_BASE_URL }}" \
+              -e API_BASE_URL="${{ secrets.API_BASE_URL }}" \
+              ${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:latest
           EOF

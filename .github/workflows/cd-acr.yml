@@ -7,6 +7,7 @@ on:
 
 jobs:
   build-and-push:
+    environment: STG
     name: Build and Push Image
     runs-on: ubuntu-latest
 
@@ -23,10 +24,10 @@ jobs:
           if [ "${{ github.event_name }}" = "release" ]; then
             TAG=${{ github.event.release.tag_name }}
           else
-            TAG=manual-${{ github.sha }}
+            TAG=latest
           fi
 
-          IMAGE="${{ vars.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:$TAG"
+          IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:$TAG"
 
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
@@ -36,7 +37,7 @@ jobs:
       - name: Log in to ACR
         uses: docker/login-action@v3
         with:
-          registry: ${{ vars.ACR_LOGIN_SERVER }}
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
@@ -47,4 +48,4 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE }}
-            ${{ vars.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:latest
+            ${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:latest
