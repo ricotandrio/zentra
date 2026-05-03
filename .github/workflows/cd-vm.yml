@@ -13,6 +13,7 @@ on:
 
 jobs:
   deploy:
+    environment: STG
     name: Deploy to VM
     runs-on: ubuntu-latest
 
@@ -41,7 +42,7 @@ jobs:
 
       - name: Deploy via SSH
         run: |
-          ssh -i vm_key.pem azureuser@${{ secrets.VM_IP }} << EOF
+          ssh -i vm_key.pem azureuser@${{ secrets.AZURE_VM_IP }} << EOF
             set -e
 
             IMAGE="${{ vars.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:${{ steps.tag.outputs.tag }}"
@@ -60,7 +61,7 @@ jobs:
             docker run -d \
               --restart unless-stopped \
               --name zentra \
-              -p 3000:3000 \
+              -p ${{ vars.EXPRESS_PORT }}:${{ vars.EXPRESS_PORT }} \
               -e NODE_ENV=${{ vars.NODE_ENV }} \
               -e EXPRESS_PORT=${{ vars.EXPRESS_PORT }} \
               -e DISCORD_BOT_TOKEN="${{ secrets.DISCORD_BOT_TOKEN }}" \
