@@ -24,10 +24,13 @@ jobs:
       }}
 
     steps:   
-      - name: Setup SSH key
+      - name: Setup SSH trust
         run: |
+          mkdir -p ~/.ssh
           echo "${{ secrets.AZURE_ZENTRA }}" > vm_key.pem
           chmod 400 vm_key.pem
+
+          ssh-keyscan -H "${{ secrets.AZURE_VM_IP }}" >> ~/.ssh/known_hosts
 
       - name: Determine image tag
         id: tag
