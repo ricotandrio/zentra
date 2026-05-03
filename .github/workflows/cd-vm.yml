@@ -22,18 +22,11 @@ jobs:
         github.event.workflow_run.conclusion == 'success'
       }}
 
-    steps:
-      - name: Install SSH tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y openssh-client
-          
+    steps:   
       - name: Setup SSH key
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.AZURE_ZENTRA }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.VM_IP }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.AZURE_ZENTRA }}" > vm_key.pem
+          chmod 400 vm_key.pem
 
       - name: Determine image tag
         id: tag
@@ -48,7 +41,7 @@ jobs:
 
       - name: Deploy via SSH
         run: |
-          ssh azureuser@${{ secrets.VM_IP }} << EOF
+          ssh -i vm_key.pem azureuser@${{ secrets.VM_IP }} << EOF
             set -e
 
             IMAGE="${{ vars.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:${{ steps.tag.outputs.tag }}"
