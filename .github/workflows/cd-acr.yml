@@ -48,6 +48,4 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE }}
-            if [ "${{ github.event_name }}" = "release" ]; then
-              ${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:latest
-            fi
+            ${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:latest
