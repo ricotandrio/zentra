@@ -49,16 +49,16 @@ jobs:
             echo "Connected to VM. Deploying application..."
             set -e
 
-            IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:latest"
-
             echo "Logging in to ACR"
 
             echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} \
               -u "${{ secrets.ACR_USERNAME }}" \
               --password-stdin
 
-            echo "Pulling image: $IMAGE"
+            IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:latest"
 
+            echo "Pulling image: $IMAGE"
+            
             docker pull $IMAGE
 
             echo "Stopping existing container (if any)"
