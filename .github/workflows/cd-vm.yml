@@ -42,7 +42,7 @@ jobs:
 
             echo "Pulling image"
             
-            docker pull ${{ secrets.ACR_LOGIN_SERVER }}/${{ IMAGE_APP_NAME }}:latest
+            docker pull ${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:latest
 
             echo "Stopping existing container (if any)"
 
@@ -69,5 +69,5 @@ jobs:
               -e GITHUB_REPOSITORY_NAME="${{ vars.GH_REPOSITORY_NAME }}" \
               -e WEBHOOK_BASE_URL="${{ secrets.WEBHOOK_BASE_URL }}" \
               -e API_BASE_URL="${{ secrets.API_BASE_URL }}" \
-              ${{ secrets.ACR_LOGIN_SERVER }}/${{ IMAGE_APP_NAME }}:latest
+              ${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:latest
           EOF
