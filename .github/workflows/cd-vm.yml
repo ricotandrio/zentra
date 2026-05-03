@@ -59,7 +59,7 @@ jobs:
 
             echo "Pulling image: $IMAGE"
             
-            docker pull $IMAGE
+            docker pull zentraregistry.azurecr.io/zentra:latest
 
             echo "Stopping existing container (if any)"
 
@@ -86,5 +86,5 @@ jobs:
               -e GITHUB_REPOSITORY_NAME="${{ vars.GH_REPOSITORY_NAME }}" \
               -e WEBHOOK_BASE_URL="${{ secrets.WEBHOOK_BASE_URL }}" \
               -e API_BASE_URL="${{ secrets.API_BASE_URL }}" \
-              $IMAGE
+              zentraregistry.azurecr.io/zentra:latest
           EOF
