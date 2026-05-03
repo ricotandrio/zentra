@@ -51,7 +51,7 @@ jobs:
 
             IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:${{ steps.tag.outputs.tag }}"
 
-            echo "Deploying $IMAGE"
+            echo "Logging in to ACR and pulling image: $IMAGE"
 
             echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} \
               -u "${{ secrets.ACR_USERNAME }}" \
@@ -59,8 +59,12 @@ jobs:
 
             docker pull $IMAGE
 
+            echo "Stopping existing container (if any)"
+
             docker stop zentra || true
             docker rm zentra || true
+
+            echo "Running new container with environment variables..."
 
             docker run -d \
               --restart unless-stopped \
