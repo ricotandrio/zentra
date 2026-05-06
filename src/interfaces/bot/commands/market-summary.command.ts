@@ -1,5 +1,5 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { AnalyzeMarketUseCase, GetSubscribedTickersUseCase } from '@/application/use-cases/ticker';
+import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { GetSubscribedTickersUseCase } from '@/application/use-cases/ticker';
 import { ITickerRepository } from '@/domain/repositories/ticker.repository';
 import { IEventBus } from '@/shared/event-bus';
 
@@ -20,7 +20,7 @@ export const data = new SlashCommandBuilder()
 export async function execute(
   interaction: ChatInputCommandInteraction,
   tickerRepository: ITickerRepository,
-  _eventBus?: IEventBus
+  eventBus: IEventBus
 ): Promise<void> {
   await interaction.deferReply();
 
@@ -45,99 +45,19 @@ export async function execute(
       tickersToAnalyze = tickers.map((t) => t.symbol);
     }
 
-    const analyzeUseCase = new AnalyzeMarketUseCase();
-    const analyses = await analyzeUseCase.analyzeMultipleTickers(tickersToAnalyze);
-
-    // Create embeds for each ticker
-    const embeds = analyses.map((analysis) => {
-      const sentimentEmoji =
-        analysis.overallSentiment.label === 'bullish'
-          ? '🟢'
-          : analysis.overallSentiment.label === 'bearish'
-            ? '🔴'
-            : '🟡';
-
-      const priceChange = analysis.quote.change >= 0 ? '📈' : '📉';
-      const changeStr = `${analysis.quote.changePercent >= 0 ? '+' : ''}${analysis.quote.changePercent.toFixed(2)}%`;
-
-      return new EmbedBuilder()
-        .setColor(
-          analysis.overallSentiment.label === 'bullish'
-            ? 0x00ff00
-            : analysis.overallSentiment.label === 'bearish'
-              ? 0xff0000
-              : 0xffff00
-        )
-        .setTitle(`${sentimentEmoji} ${analysis.quote.ticker} — ${analysis.quote.name}`)
-        .addFields(
-          {
-            name: `${priceChange} Price`,
-            value: `Rp${analysis.quote.price.toLocaleString('id-ID')} (${changeStr})`,
-            inline: true,
-          },
-          {
-            name: '📊 Volume',
-            value: analysis.quote.volume.toLocaleString('id-ID'),
-            inline: true,
-          },
-          {
-            name: '📈 52w High',
-            value: `Rp${analysis.quote.fiftyTwoWeekHigh.toLocaleString('id-ID')}`,
-            inline: true,
-          },
-          {
-            name: '📉 52w Low',
-            value: `Rp${analysis.quote.fiftyTwoWeekLow.toLocaleString('id-ID')}`,
-            inline: true,
-          },
-          {
-            name: `${sentimentEmoji} Sentiment`,
-            value: `**${analysis.overallSentiment.label.toUpperCase()}** (${analysis.overallSentiment.score})`,
-            inline: false,
-          },
-          {
-            name: '🎯 Top Signals',
-            value:
-              analysis.overallSentiment.signals.length > 0
-                ? analysis.overallSentiment.signals.join(' ')
-                : 'No strong signals',
-            inline: false,
-          },
-          {
-            name: '📰 News Sentiment',
-            value: `Based on ${analysis.news.length} recent articles`,
-            inline: false,
-          }
-        )
-        .setFooter({
-          text: `Last updated: ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`,
-        });
+    // Emit market analysis trigger event
+    await eventBus.publish({
+      type: 'worker:market-analysis:trigger',
+      source: 'bot',
+      timestamp: new Date(),
     });
 
-    // Split embeds into chunks if more than 10 (Discord limit is 10 per message)
-    const chunks: EmbedBuilder[][] = [];
-    for (let i = 0; i < embeds.length; i += 10) {
-      chunks.push(embeds.slice(i, i + 10));
-    }
-
-    // Send all chunks
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
-      if (!chunk || chunk.length === 0) continue;
-
-      if (i === 0) {
-        await interaction.editReply({
-          embeds: chunk,
-        });
-      } else {
-        await interaction.followUp({
-          embeds: chunk,
-        });
-      }
-    }
+    await interaction.editReply({
+      content: `⏳ Analyzing ${tickersToAnalyze.length} ticker(s)... Results will be posted shortly.`,
+    });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : 'Failed to analyze market';
+      error instanceof Error ? error.message : 'Failed to trigger market analysis';
     await interaction.editReply({
       content: `❌ ${message}`,
     });
