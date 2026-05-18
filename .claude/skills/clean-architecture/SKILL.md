@@ -1,6 +1,15 @@
+---
+name: clean-architecture
+description: Understand Zentra's clean architecture layers and dependency flow (inward only). Use when confused about dependencies, architecture violations, or to learn layer invariants and anti-patterns.
+when_to_use: Asked about architecture, dependencies, "why is this wrong", layer imports, domain violations, design patterns
+user-invocable: true
+disable-model-invocation: false
+paths: src/**/*.ts,.claude/skills/*.md,docs/**/*.md
+---
+
 # Clean Architecture Pattern
 
-> Core architectural principle for all Zentra code
+Core architectural principle for all Zentra code.
 
 ## The Dependency Flow
 
@@ -42,3 +51,9 @@ Infrastructure (External APIs, DB, Adapters)
 - **Easy replacement**: Swap implementations without touching business logic.
 - **Maintainability**: Clear responsibility boundaries.
 - **Scaling**: Add new interfaces (CLI, Slack, mobile API) without chaos.
+
+## Learn More
+
+- See [reference.md](reference.md) for complete layer invariants and detailed rules
+- See [anti-patterns.md](anti-patterns.md) for common violations and how to fix them
+- See [diagrams/](diagrams/) for ASCII architecture diagrams

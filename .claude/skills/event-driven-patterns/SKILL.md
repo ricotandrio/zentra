@@ -1,10 +1,19 @@
-# Event-Driven Architecture Skill
+---
+name: event-driven-patterns
+description: How Zentra components communicate asynchronously using an in-memory event bus. Use when decoupling components, triggering background jobs from API, or delivering results from worker to Discord.
+when_to_use: Asynchronous communication, decoupling components, event bus, publishing/subscribing, background job triggers, audit trails
+user-invocable: true
+disable-model-invocation: false
+paths: src/**/*.ts,.claude/skills/*.md
+---
 
-> **How Zentra components communicate asynchronously**
+# Event-Driven Architecture
+
+How Zentra components communicate asynchronously.
 
 ## Overview
 
-Zentra uses an **in-memory event bus** to decouple components. Instead of direct HTTP calls or tight coupling:
+Zentra uses an **in-memory event bus** to decouple components. Instead of direct calls:
 
 - **API** publishes `WorkerMarketAnalysisTriggerEvent` → Worker picks it up
 - **Worker** publishes `MarketAnalysisCompleteEvent` → API subscriber delivers to Discord
@@ -36,40 +45,58 @@ export interface MarketAnalysisCompleteEvent extends DomainEvent {
   };
 }
 
-export type ApplicationEvent = WorkerMarketAnalysisTriggerEvent | MarketAnalysisCompleteEvent | /* ... */;
+export type ApplicationEvent = 
+  | WorkerMarketAnalysisTriggerEvent 
+  | MarketAnalysisCompleteEvent 
+  | /* ... other event types */;
 ```
+
+---
 
 ### 2. Publish Events
 
 In any use case or job:
 
 ```typescript
-await this.eventBus.publish({
-  type: 'market-analysis:complete',
-  source: 'worker',
-  timestamp: new Date(),
-  data: {
-    channelId,
-    timestamp: new Date().toISOString(),
-    results: [...],
-  },
-});
+export class AnalyzeMarketUseCase {
+  constructor(private eventBus: IEventBus) {}
+
+  async execute(symbols: string[]): Promise<void> {
+    // ... business logic ...
+
+    await this.eventBus.publish({
+      type: 'market-analysis:complete',
+      source: 'worker',
+      timestamp: new Date(),
+      data: {
+        channelId: '123456789',
+        timestamp: new Date().toISOString(),
+        results: [...],
+      },
+    });
+  }
+}
 ```
+
+---
 
 ### 3. Subscribe to Events
 
 In component initialization (bot, API app, etc.):
 
 ```typescript
+// Bootstrap: main.bot.ts
 eventBus.subscribe<MarketAnalysisCompleteEvent>(
   'market-analysis:complete',
   async (event) => {
     // Handle the event
     const channel = await discordClient.channels.fetch(event.data.channelId);
-    // Send results...
+    await channel.send(`📊 Analysis Complete\nResults: ${event.data.results.length}`);
   }
 );
 ```
+
+---
 
 ### 4. Bootstrap Initialization
 
@@ -79,21 +106,28 @@ In `main.api.ts`, `main.bot.ts`, `main.worker.ts`:
 import { initializeEventBus } from '@/shared/event-bus';
 
 const eventBus = initializeEventBus(); // Must happen first!
+
 // Pass eventBus to all components that need it
+const useCase = new AnalyzeMarketUseCase(eventBus);
+const job = new MarketAnalysisJob(eventBus);
 ```
+
+---
 
 ## Design Principles
 
-✅ **One event type per semantic action** — If it's logically one thing, it's one event.  
+✅ **One event type per semantic action** — If it's logically one thing, it's one event  
 ✅ **Use union types** — `ApplicationEvent = EventA | EventB | ...`  
-✅ **Include source and timestamp** — Always identify origin and when it happened.  
-✅ **Make data immutable** — Events are facts, not mutable state.  
-✅ **Promise-based handlers** — Handlers can be async.
+✅ **Include source and timestamp** — Always identify origin and when it happened  
+✅ **Make data immutable** — Events are facts, not mutable state  
+✅ **Promise-based handlers** — Handlers can be async  
 
-❌ **Don't create too many event types** — Group related concepts.  
-❌ **Don't put business logic in subscribers** — Move it to use cases.  
-❌ **Don't make subscribers mutate shared state without a contract** — Use a use case.  
-❌ **Don't forget to handle errors in subscribers** — Event bus uses `Promise.allSettled`.
+❌ **Don't create too many event types** — Group related concepts  
+❌ **Don't put business logic in subscribers** — Move it to use cases  
+❌ **Don't make subscribers mutate shared state** — Use a use case  
+❌ **Don't forget to handle errors in subscribers** — Event bus uses `Promise.allSettled`  
+
+---
 
 ## When to Use Events
 
@@ -108,6 +142,8 @@ const eventBus = initializeEventBus(); // Must happen first!
 - **Request-response** that needs immediate feedback → Use direct call or HTTP
 - **Guaranteed delivery to one handler** → Use a queue (if we add Kafka/RabbitMQ)
 - **Complex orchestration** → Use a saga pattern (future enhancement)
+
+---
 
 ## Testing Events
 
@@ -131,3 +167,10 @@ expect(mockEventBus.publish).toHaveBeenCalledWith(
   })
 );
 ```
+
+---
+
+## See Also
+
+See [reference.md](reference.md) for complete event type specifications.  
+See [examples.md](examples.md) for publishing/subscribing patterns.
