@@ -1,119 +1,127 @@
-# Zentra Agents & Skills
+# AGENTS.md
 
-> AI agent guide for Zentra codebase. Reference this before coding.
+## Purpose
 
----
+This repository uses AI agents as engineering assistants, not autonomous owners of the codebase.
 
-## Prime Rule
+Agents should:
+- help implement scoped tasks
+- validate architecture consistency
+- review changes
+- reduce repetitive work
+- improve documentation quality
+- assist debugging and refactoring
 
-**Always identify and read relevant skills in `.claude/skills/*.md` before writing code.**
-
----
-
-## Core Constraints
-
-**Layer Dependencies**
-- ❌ Domain imports anything external
-- ❌ Application imports infrastructure implementations or interfaces
-- ❌ Infrastructure imports interfaces
-- ✅ Everything depends inward (Interfaces → Application → Domain, Infrastructure implements Domain)
-
-**File Organization**
-- One class per file
-- Filenames: `*.usecase.ts`, `*.entity.ts`, `*.adapter.ts`, `*.repository.ts`, `*.contract.ts`, `*.service.ts`, `*.job.ts`, `*.scheduler.ts`, `*.command.ts`, `*.controller.ts`, `*.dto.ts`
-- Use kebab-case, no helpers/managers/actions
-- Path aliases: `@/` prefix always
-
-**Imports**
-- External packages → Shared → Domain → Application → Infrastructure → Config → Local
-- Never import `interfaces/` in `application/` or `domain/`
-- Never import infrastructure implementations in `application/`
-
-**Business Logic Location**
-- Use cases: `application/use-cases/<feature>/`
-- Entities: `domain/entities/`
-- Adapters: `infrastructure/external/<service>/`
-- Contracts: `application/contracts/`
-- Handlers/Commands: `interfaces/bot/`, `interfaces/api/`, `interfaces/worker/`
-
-**External Integrations**
-- Define port in `application/contracts/`
-- Implement adapter in `infrastructure/external/<service>/`
-- Inject contract into use case, never implementation
-- Map external errors to domain errors in adapter
-
----
-
-## Skills Reference
-
-| Skill | Purpose | When to Use |
-|-------|---------|------------|
-| `./claude/skills/clean-architecture-pattern.md` | Dependency flow, layer invariants, anti-patterns | Adding new layers or confused about architecture |
-| `./claude/skills/layer-placement.md` | Where code goes, decision tree, common scenarios | Deciding file location for new feature |
-| `./claude/skills/code-organization.md` | Naming conventions, imports, file structure | Creating new files or organizing module |
-| `./claude/skills/event-driven-architecture.md` | Event bus, publishing, subscribing, design principles | Building async communication or decopled systems |
-| `./claude/skills/external-integrations.md` | Adapter pattern, contracts, error handling | Integrating third-party service or API |
-| `./claude/skills/testing-patterns.md` | Unit/integration tests, mocking, coverage goals | Writing or reviewing tests |
+Agents should NOT:
+- redesign the entire project without request
+- introduce major dependencies automatically
+- rewrite unrelated files
+- perform broad refactors without approval
 
 ---
 
 ## Agent Workflow
 
-1. **Understand scope** — Read user request fully
-2. **Identify skills** — Which skills from table above apply?
-3. **Read skills** — Open `.claude/skills/<skill>.md` for implementation details
-4. **Verify constraints** — Check Core Constraints section above
-5. **Code** — Implement following skill guidance
-6. **Verify** — Does code follow all constraints and skill patterns?
+Before making changes:
+1. Understand the task scope
+2. Read related files first
+3. Minimize unrelated modifications
+4. Prefer consistency with existing patterns
+5. Explain risky decisions before applying them
 
 ---
 
-## Ask Before Coding
+## Repository Principles
 
-Stop and ask user when:
-
-- Correct layer is ambiguous
-- Feature could fit multiple use cases
-- New external dependency needed but no contract exists
-- Modifying `domain/` (confirm with user first)
-- Adding new interface/entrypoint not in ARCHITECTURE.md
-- User intent is unclear
-
-State ambiguity clearly. Do not guess.
+- Keep code simple and maintainable
+- Prefer explicit code over abstraction
+- Avoid premature optimization
+- Avoid unnecessary dependencies
+- Keep architecture modular
+- Preserve current project conventions
 
 ---
 
-## What Not To Do
+## Validation Responsibilities
 
-❌ Put business logic in handlers, adapters, or jobs  
-❌ Call SDK directly from use cases  
-❌ Create circular dependencies  
-❌ Call DB from `interfaces/`  
-❌ Create god orchestrators  
-❌ Assume capabilities beyond [README.md](./README.md)  
+Agents should validate:
+- naming consistency
+- architecture consistency
+- duplicated logic
+- unnecessary complexity
+- dead code
+- missing error handling
+- missing documentation
+- unsafe assumptions
 
----
-
-## Quick Links
-
-- **CLAUDE.md** — [AI behavior rules](./CLAUDE.md)
-- **README.md** — [Project overview & setup](./README.md)
-- **Skills Directory** — [.claude/skills/](./claude/skills/)
-- **Architecture Deep Dive** — [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+Agents may suggest improvements, but should not apply large architectural changes automatically.
 
 ---
 
-## .claude/skills Directory
+## Allowed Autonomous Actions
 
-Individual skill files are maintained in `.claude/skills/` for modularity.
+Agents may:
+- fix scoped bugs
+- improve documentation
+- refactor small isolated code
+- add tests
+- improve type safety
+- clean obvious duplication
+- improve readability
 
-| Skill File | Purpose |
-|------------|---------|
-| `clean-architecture-pattern.md` | Dependency flow, layer invariants, anti-patterns |
-| `layer-placement.md` | Decision tree for where new code goes |
-| `code-organization.md` | Naming conventions, imports, file structure |
-| `event-driven-architecture.md` | Event bus patterns, publishing/subscribing |
-| `external-integrations.md` | Adapter pattern, contracts, error handling |
-| `testing-patterns.md` | Unit/integration tests, mocking, coverage |
+---
 
-To update a skill: edit the corresponding `.claude/skills/*.md` file directly.
+## Actions Requiring Confirmation
+
+Ask before:
+- changing architecture
+- adding dependencies
+- deleting files
+- renaming public APIs
+- modifying infrastructure
+- changing database schema
+- changing CI/CD
+- performing large refactors
+
+---
+
+## Coding Expectations
+
+- Follow existing project structure
+- Reuse existing utilities first
+- Keep functions focused
+- Avoid hidden side effects
+- Prefer readability over cleverness
+
+---
+
+## Communication Style
+
+Responses should:
+- be concise
+- explain tradeoffs clearly
+- highlight risks early
+- avoid unnecessary verbosity
+
+When uncertain:
+- ask clarifying questions instead of guessing
+
+---
+
+## Skills & Architecture References
+
+For detailed patterns, see:
+- **ARCHITECTURE.md** — [Layer structure, dependency rules](./docs/ARCHITECTURE.md)
+- **Skills Directory** — [`.claude/skills/`](./.claude/skills/) — focused guides:
+  - `clean-architecture/` — Layer invariants, anti-patterns
+  - `layer-placement/` — Where code goes
+  - `code-standards/` — Naming, imports, organization
+  - `event-driven-patterns/` — Async communication
+  - `external-adapter-pattern/` — Third-party integrations
+  - `testing-strategies/` — Test patterns
+
+---
+
+## Goal
+
+The goal is to use AI agents as reliable engineering collaborators for daily development tasks while keeping human control over architecture and product direction.

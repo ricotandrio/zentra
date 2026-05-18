@@ -1,6 +1,13 @@
-# External Integrations Skill
+---
+name: external-adapter-pattern
+description: How to safely integrate third-party services (GitHub, Yahoo Finance, LLMs, APIs) using the adapter pattern. Use when adding external integrations, need to swap implementations, or mapping errors.
+user-invocable: true
+disable-model-invocation: false
+---
 
-> **How to safely integrate third-party services (GitHub, Yahoo Finance, LLMs, etc.)**
+# External Integrations & Adapter Pattern
+
+How to safely integrate third-party services.
 
 ## The Adapter Pattern
 
@@ -34,6 +41,8 @@ export interface IMarketDataAdapter {
 
 **Key**: Define the contract from the use case's perspective, not the API's.
 
+---
+
 ## Step 2: Implement the Adapter
 
 In `src/infrastructure/external/<service>/`:
@@ -65,6 +74,8 @@ export class YahooAdapter implements IMarketDataAdapter {
 
 **Key**: Translate external API response to your domain model. Hide all SDK details.
 
+---
+
 ## Step 3: Use in Application Layer
 
 The use case depends on the contract, not the implementation:
@@ -85,6 +96,8 @@ export class AnalyzeMarketUseCase {
 }
 ```
 
+---
+
 ## Step 4: Wire in Bootstrap
 
 In `src/bootstrap/main.api.ts` or `main.worker.ts`:
@@ -98,6 +111,8 @@ const analyzeMarketUseCase = new AnalyzeMarketUseCase(marketDataAdapter);
 
 // Now use analyzeMarketUseCase
 ```
+
+---
 
 ## Error Handling
 
@@ -123,6 +138,8 @@ export class YahooAdapter implements IMarketDataAdapter {
 }
 ```
 
+---
+
 ## Swapping Implementations
 
 Later, replace Yahoo with another provider:
@@ -136,6 +153,8 @@ const adapter = new AlphaVantageAdapter(); // Same IMarketDataAdapter
 
 // Everything else works unchanged
 ```
+
+---
 
 ## Testing with Adapters
 
@@ -164,11 +183,15 @@ describe('YahooAdapter', () => {
 });
 ```
 
+---
+
 ## Current Adapters
 
 - **Yahoo Finance** (`infrastructure/external/yahoo/`) — Market data & news
 - **GitHub** (`infrastructure/external/github/`) — Issue creation & PR notifications
 - **LLM** (`infrastructure/external/llm/`) — Gemini (swappable for OpenAI, Claude, etc.)
+
+---
 
 ## Adding a New External Service
 
@@ -177,14 +200,26 @@ describe('YahooAdapter', () => {
 3. Inject contract into use case
 4. Wire in bootstrap
 
+See [examples.md](examples.md) for full examples.
+
+---
+
 ## Design Principles
 
-✅ **Depend on contracts, not implementations** — Allows swapping.  
-✅ **One adapter per external service** — Keep concerns separated.  
-✅ **Map external errors to domain errors** — Hide third-party specifics.  
-✅ **No business logic in adapters** — Only translation and I/O.  
-✅ **Test adapters separately** — Mock the SDK, verify translation.
+✅ **Depend on contracts, not implementations** — Allows swapping  
+✅ **One adapter per external service** — Keep concerns separated  
+✅ **Map external errors to domain errors** — Hide third-party specifics  
+✅ **No business logic in adapters** — Only translation and I/O  
+✅ **Test adapters separately** — Mock the SDK, verify translation  
 
-❌ **Never call external SDK from use cases** — Breaks the architecture.  
-❌ **Don't create adapters for stable libraries** — Only for external services (GitHub, APIs, etc.).  
-❌ **Don't mix protocols in one adapter** — HTTP adapter ≠ WebSocket adapter.
+❌ **Never call external SDK from use cases** — Breaks the architecture  
+❌ **Don't create adapters for stable libraries** — Only for external services  
+❌ **Don't mix protocols in one adapter** — HTTP adapter ≠ WebSocket adapter  
+
+---
+
+## See Also
+
+See [reference.md](reference.md) for adapter implementation checklist.  
+See [templates/](templates/) for adapter templates.  
+See [external-adapter-pattern skill](/skills/external-adapter-pattern/SKILL.md) examples.
