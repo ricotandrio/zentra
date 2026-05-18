@@ -1,10 +1,8 @@
 ---
 name: event-driven-patterns
 description: How Zentra components communicate asynchronously using an in-memory event bus. Use when decoupling components, triggering background jobs from API, or delivering results from worker to Discord.
-when_to_use: Asynchronous communication, decoupling components, event bus, publishing/subscribing, background job triggers, audit trails
 user-invocable: true
 disable-model-invocation: false
-paths: src/**/*.ts,.claude/skills/*.md
 ---
 
 # Event-Driven Architecture

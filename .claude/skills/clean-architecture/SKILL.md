@@ -1,10 +1,8 @@
 ---
 name: clean-architecture
 description: Understand Zentra's clean architecture layers and dependency flow (inward only). Use when confused about dependencies, architecture violations, or to learn layer invariants and anti-patterns.
-when_to_use: Asked about architecture, dependencies, "why is this wrong", layer imports, domain violations, design patterns
 user-invocable: true
 disable-model-invocation: false
-paths: src/**/*.ts,.claude/skills/*.md,docs/**/*.md
 ---
 
 # Clean Architecture Pattern

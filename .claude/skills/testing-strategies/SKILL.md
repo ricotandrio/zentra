@@ -1,10 +1,8 @@
 ---
 name: testing-strategies
 description: How to write tests for Zentra's architecture: unit tests for domain/application/infrastructure, integration tests for interfaces, mocking patterns, and coverage goals.
-when_to_use: Writing tests, testing architecture, unit test strategies, integration tests, mocking patterns, test organization, coverage goals
 user-invocable: true
 disable-model-invocation: false
-paths: tests/**/*.ts,src/**/*.test.ts,src/**/*.spec.ts,.claude/skills/*.md
 ---
 
 # Testing Strategies

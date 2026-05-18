@@ -1,10 +1,8 @@
 ---
 name: external-adapter-pattern
 description: How to safely integrate third-party services (GitHub, Yahoo Finance, LLMs, APIs) using the adapter pattern. Use when adding external integrations, need to swap implementations, or mapping errors.
-when_to_use: External API integration, third-party services, adapter pattern, contract definition, error handling, swapping implementations
 user-invocable: true
 disable-model-invocation: false
-paths: src/**/*.ts,src/infrastructure/external/**,.claude/skills/*.md
 ---
 
 # External Integrations & Adapter Pattern

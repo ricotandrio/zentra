@@ -1,10 +1,8 @@
 ---
 name: code-standards
 description: Naming conventions, file organization, imports, and code style for Zentra. Use for "how should I name this", "where do imports go", code structure questions, or type definitions.
-when_to_use: Naming conventions, file organization, import order, code structure, "what pattern", type definitions, "how should I organize"
 user-invocable: true
 disable-model-invocation: false
-paths: src/**/*.ts,.claude/skills/*.md
 ---
 
 # Code Standards & Organization

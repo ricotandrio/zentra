@@ -1,11 +1,9 @@
 ---
 name: layer-placement
 description: Decide where code goes in Zentra's architecture using a decision tree. Use when asking "where should I put this", "which layer for X", or planning new features. Guides placement for use-cases, entities, adapters, repositories, jobs, commands, controllers.
-when_to_use: Code placement questions, "where should I put", "which layer", new feature structure, architectural decisions
 argument-hint: "[code-type] [context]"
 user-invocable: true
 disable-model-invocation: false
-paths: src/**/*.ts,.claude/skills/*.md
 ---
 
 # Layer Placement Decision Guide
