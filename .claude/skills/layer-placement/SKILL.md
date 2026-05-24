@@ -1,6 +1,6 @@
 ---
 name: layer-placement
-description: Decide where code goes in Zentra's architecture using a decision tree. Use when asking "where should I put this", "which layer for X", or planning new features. Guides placement for use-cases, entities, adapters, repositories, jobs, commands, controllers.
+description: Decide where code goes in Zentra's modular architecture using a decision tree. Use when asking "where should I put this", "which layer for X", or planning new features. Guides placement for use-cases, entities, adapters, repositories, jobs, commands, controllers within modules and shared code.
 argument-hint: "[code-type] [context]"
 user-invocable: true
 disable-model-invocation: false
@@ -8,70 +8,139 @@ disable-model-invocation: false
 
 # Layer Placement Decision Guide
 
-Decide where new code goes in Zentra's architecture.
+Decide where new code goes in Zentra's modular clean architecture.
 
 ## Quick Decision Tree
 
-**Start here**: Is it a business rule or domain concept?
+**Start here**: Is this part of a specific feature module (e.g., ticker-management, market-analysis)?
 
 ```
-├─ YES (business rule, domain logic, entity)
-│  └─ Domain layer: src/domain/entities/, src/domain/repositories/ (interfaces)
+├─ YES (ticker management, market analysis, etc.)
+│  └─ Place in src/modules/<feature>/
+│     ├─ Business rule / entity? → src/modules/<feature>/domain/
+│     ├─ Use case / orchestration? → src/modules/<feature>/application/usecases/
+│     ├─ External service / adapter? → src/modules/<feature>/infrastructure/
+│     └─ Module factory? → src/modules/<feature>/module.ts
 │
-├─ NO: Is it an orchestration of business rules?
-│  ├─ YES (use case, workflow, orchestration)
-│  │  └─ Application layer: src/application/use-cases/<feature>/
-│  │
-│  ├─ NO: Is it an entrypoint (Discord, HTTP, job)?
-│  │  ├─ YES
-│  │  │  ├─ Discord command? → src/interfaces/bot/commands/
-│  │  │  ├─ HTTP route? → src/interfaces/api/routes/
-│  │  │  ├─ Background job? → src/interfaces/worker/jobs/
-│  │  │  └─ Event subscriber? → src/interfaces/*/subscribers/
-│  │  │
-│  │  ├─ NO: Is it an external service (GitHub, Yahoo, LLM)?
-│  │  │  ├─ YES
-│  │  │  │  ├─ Define contract: src/application/contracts/<service>.contract.ts
-│  │  │  │  └─ Implement adapter: src/infrastructure/external/<service>/<service>.adapter.ts
-│  │  │  │
-│  │  │  ├─ NO: Is it data transfer (DTO, Response)?
-│  │  │  │  └─ src/application/dto/
-│  │  │  │
-│  │  │  └─ Default to Shared: src/shared/
+├─ NO: Is it a bot/API/worker entrypoint (command, route, job)?
+│  ├─ Discord command? → src/apps/bot/commands/
+│  ├─ Discord event subscriber? → src/apps/bot/subscribers/
+│  ├─ HTTP route? → src/apps/api/routes/
+│  ├─ Background job? → src/modules/<feature>/job.ts
+│  ├─ Scheduled task? → src/modules/<feature>/scheduler.ts
+│  └─ Worker event subscriber? → src/modules/<feature>/subscriber.ts
+│
+├─ NO: Is it cross-module utility (logging, events, scheduling)?
+│  └─ src/shared/
+│     ├─ Event types & bus? → src/shared/event-bus/
+│     ├─ Logging? → src/shared/logger/
+│     ├─ Configuration? → src/shared/config/
+│     ├─ Scheduling utilities? → src/shared/scheduler/
+│     └─ Generic functions? → src/shared/utils/
+│
+└─ Default to appropriate shared utility
 ```
+
+## Modular Architecture Pattern
+
+Zentra organizes features into **self-contained modules**:
+
+```
+src/modules/<feature>/
+├── domain/                          # Business rules (pure, no deps)
+│   ├── entities/                    # Value objects, aggregates
+│   └── repositories/                # Repository interfaces (ports)
+├── application/
+│   └── usecases/                    # Orchestration, workflows
+├── infrastructure/
+│   ├── db/                          # Database implementations
+│   └── data-sources/                # External API adapters
+├── job.ts (optional)                # Scheduled background work
+├── scheduler.ts (optional)          # Cron configuration
+├── subscriber.ts (optional)         # Event handlers
+└── module.ts                        # Factory that exports usecases
+```
+
+**Key Principle:** Application uses domain **interfaces** (ports), never concrete implementations. Infrastructure implements those ports.
+
+**Example: Ticker Management Module**
+```
+src/modules/ticker-management/
+├── domain/entities/ticker.entity.ts           # Ticker value object
+├── domain/repositories/ticket.repository.ts   # ITickerRepository port (abstract)
+├── application/usecases/
+│   ├── add-ticker.usecase.ts                  # Uses ITickerRepository
+│   ├── remove-ticker.usecase.ts               # Uses ITickerRepository
+│   └── get-tickers.usecase.ts                 # Uses ITickerRepository
+├── infrastructure/db/
+│   ├── database.ts                            # SQLite setup
+│   └── sqlite-ticker.repository.ts            # ITickerRepository implementation
+└── module.ts                        # Factory: createTickerManagementModule()
+```
+
+---
 
 ## Common Scenarios
 
-### Scenario 1: "I need to add a new bot command"
+### Scenario 1: "I need to add a new ticker management feature"
 
-**Question**: Is this a new capability or using existing logic?
+**Example: Remove a ticker from the watchlist**
 
-**If NEW capability:**
-1. Create use case: `src/application/use-cases/<feature>/<feature>.usecase.ts`
-2. Create command: `src/interfaces/bot/commands/<command>.command.ts`
-3. Wire in `src/interfaces/bot/commands/index.ts`
+1. **Create use case** in `src/modules/ticker-management/application/usecases/remove-ticker.usecase.ts`
+   ```typescript
+   export class RemoveTickerUseCase {
+     constructor(private tickerRepository: ITickerRepository) {}
+     async execute(input: { symbol: string }): Promise<void> {
+       const ticker = await this.tickerRepository.get(input.symbol);
+       if (!ticker) throw new Error(`Ticker ${input.symbol} not found`);
+       await this.tickerRepository.remove(input.symbol);
+     }
+   }
+   ```
 
-**If EXISTING capability:**
-1. Just create command in `src/interfaces/bot/commands/<command>.command.ts`
-2. Inject existing use case
+2. **Update module factory** in `src/modules/ticker-management/module.ts`
+   ```typescript
+   export interface TickerManagementModule {
+     addTickerUseCase: AddTickerUseCase;
+     removeTickerUseCase: RemoveTickerUseCase;  // NEW
+     getTickersUseCase: GetTickersUseCase;
+   }
+   
+   export function createTickerManagementModule() {
+     // ... setup ...
+     return {
+       addTickerUseCase: new AddTickerUseCase(repository),
+       removeTickerUseCase: new RemoveTickerUseCase(repository),  // NEW
+       getTickersUseCase: new GetTickersUseCase(repository),
+       closeDb: () => db.close(),
+     };
+   }
+   ```
 
-**Example:**
-```typescript
-// Step 1: Use case (application layer)
-export class AddTickerUseCase {
-  async execute(symbol: string) { /* business logic */ }
-}
+3. **Create bot command** in `src/apps/bot/commands/remove-ticker.command.ts`
+   ```typescript
+   export const data = new SlashCommandBuilder()
+     .setName('remove-ticker')
+     .setDescription('Remove a ticker from watchlist')
+     .addStringOption(option => option.setName('symbol').setRequired(true));
 
-// Step 2: Command (interfaces layer)
-export class AddTickerCommand {
-  constructor(private addTickerUseCase: AddTickerUseCase) {}
-  async execute(interaction: CommandInteraction) {
-    const symbol = interaction.options.getString('symbol');
-    const result = await this.addTickerUseCase.execute(symbol);
-    await interaction.reply(`Added ${result.symbol}`);
-  }
-}
-```
+   export async function execute(interaction, eventBus, tickerManagementModule) {
+     const symbol = interaction.options.getString('symbol', true);
+     await tickerManagementModule.removeTickerUseCase.execute({ symbol });
+     await interaction.reply(`✅ Removed ${symbol}`);
+   }
+   ```
+
+4. **Register in bot.ts** in `src/apps/bot/bot.ts`
+   ```typescript
+   import * as removeTicker from './commands/remove-ticker.command';
+   
+   export const botCommands = {
+     'add-ticker': addTicker,
+     'remove-ticker': removeTicker,  // NEW
+     'list-tickers': listTickers,
+   };
+   ```
 
 See [examples.md](examples.md) for full example.
 

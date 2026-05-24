@@ -1,31 +1,31 @@
 ---
 name: external-adapter-pattern
-description: How to safely integrate third-party services (GitHub, Yahoo Finance, LLMs, APIs) using the adapter pattern. Use when adding external integrations, need to swap implementations, or mapping errors.
+description: How to safely integrate third-party services (GitHub, Yahoo Finance, LLMs, APIs) using the adapter pattern. Use when adding external integrations, need to swap implementations, or mapping errors. Examples from Playwright scraping, Yahoo Finance, Gemini LLM.
 user-invocable: true
 disable-model-invocation: false
 ---
 
 # External Integrations & Adapter Pattern
 
-How to safely integrate third-party services.
+How to safely integrate third-party services in Zentra's modular architecture.
 
 ## The Adapter Pattern
 
 All external services must follow the adapter pattern:
 
 ```
-Application (Use Case)
+Application Use Case
     ↓ (depends on)
-Contract/Port (IMarketDataAdapter)
+Contract/Port (Interface)
     ↑ (implements)
-Infrastructure Adapter (YahooAdapter)
+Infrastructure Adapter (Concrete class)
     ↑ (calls)
-External Service (Yahoo Finance API)
+External Service (API, SDK, Browser, etc.)
 ```
 
-## Step 1: Define the Contract
+## Step 1: Define the Contract (Optional)
 
-In `src/application/contracts/`:
+For domain contracts, use `src/application/contracts/`:
 
 ```typescript
 // src/application/contracts/market-data.contract.ts
@@ -35,7 +35,16 @@ export interface IMarketDataAdapter {
     changePercent: number;
     volume: number;
   }>;
-  getNews(symbol: string): Promise<NewsItem[]>;
+}
+```
+
+For data-source adapters within modules, skip the explicit contract and use the adapter class directly:
+
+```typescript
+// src/modules/market-analysis/infrastructure/data-sources/market-scraper.adapter.ts
+export class MarketScraperAdapter {
+  async getTradingSummary(): Promise<MarketTickerData[]> { }
+  async getMarketSummary(): Promise<MarketSummary> { }
 }
 ```
 
@@ -43,40 +52,138 @@ export interface IMarketDataAdapter {
 
 ---
 
-## Step 2: Implement the Adapter
+## Step 2: Define Data Transfer Types
 
-In `src/infrastructure/external/<service>/`:
+For external data sources, define DTO/response types in `*.types.ts`:
 
 ```typescript
-// src/infrastructure/external/yahoo/yahoo.adapter.ts
-import yahooFinance from 'yahoo-finance2';
-import { IMarketDataAdapter } from '@/application/contracts';
+// src/modules/market-analysis/infrastructure/data-sources/market-scraper.types.ts
+export interface MarketTickerData {
+  stockCode: string;
+  stockName: string;
+  close: number;
+  volume: number;
+  foreignBuy: number;
+  foreignSell: number;
+  // ... 25+ fields
+}
 
-export class YahooAdapter implements IMarketDataAdapter {
-  async getQuote(symbol: string) {
-    const quote = await yahooFinance.quote(symbol);
+export interface MarketSummary {
+  topVolume: MarketTickerData[];
+  topValue: MarketTickerData[];
+  foreignTopNetBuy: MarketTickerData[];
+  foreignTopNetSell: MarketTickerData[];
+  totalTickers: number;
+  totalVolume: number;
+  averageChangePercent: number;
+  date: string;
+}
+
+export interface MarketApiResponse {
+  draw: number;
+  recordsTotal: number;
+  recordsFiltered: number;
+  data: MarketTickerData[];
+}
+```
+
+---
+
+## Step 3: Implement the Adapter
+
+In `src/modules/<feature>/infrastructure/data-sources/`:
+
+```typescript
+// src/modules/market-analysis/infrastructure/data-sources/market-scraper.adapter.ts
+import { chromium, Browser, Page } from 'playwright';
+import { logger } from '@/shared/logger';
+import { MarketTickerData, MarketSummary, MarketApiResponse } from './market-scraper.types';
+
+export class MarketScraperAdapter {
+  private browser: Browser | null = null;
+  private page: Page | null = null;
+
+  async initialize(): Promise<void> {
+    this.browser = await chromium.launch({ headless: false });
+    this.page = await this.browser.newPage();
+    logger.info('Playwright browser initialized');
+  }
+
+  async getRawTradingSummary(): Promise<MarketTickerData[]> {
+    if (!this.page) throw new Error('Adapter not initialized');
+    
+    await this.page.goto(MARKET_DATA_URL, { waitUntil: 'domcontentloaded' });
+    const jsonText = await this.page.textContent('pre');
+    if (!jsonText) throw new Error('No JSON data found');
+    
+    const response: MarketApiResponse = JSON.parse(jsonText);
+    this.validateResponse(response);
+    return response.data;
+  }
+
+  async getTradingSummary(): Promise<MarketTickerData[]> {
+    const raw = await this.getRawTradingSummary();
+    return raw.map(ticker => this.mapToMarketTickerData(ticker));
+  }
+
+  async getMarketSummary(): Promise<MarketSummary> {
+    const tickers = await this.getTradingSummary();
+    
+    const topVolume = [...tickers].sort((a, b) => b.volume - a.volume).slice(0, 10);
+    const foreignTopNetBuy = [...tickers]
+      .sort((a, b) => (b.foreignBuy - b.foreignSell) - (a.foreignBuy - a.foreignSell))
+      .slice(0, 10);
+    
     return {
-      price: quote.regularMarketPrice,
-      changePercent: quote.regularMarketChangePercent,
-      volume: quote.regularMarketVolume,
+      topVolume,
+      topValue: [...tickers].sort((a, b) => b.value - a.value).slice(0, 10),
+      foreignTopNetBuy,
+      foreignTopNetSell: [...tickers]
+        .sort((a, b) => (b.foreignSell - b.foreignBuy) - (a.foreignSell - a.foreignBuy))
+        .slice(0, 10),
+      totalTickers: tickers.length,
+      totalVolume: tickers.reduce((sum, t) => sum + t.volume, 0),
+      averageChangePercent: tickers.reduce((sum, t) => sum + t.change, 0) / tickers.length,
+      date: isoDateToLocaleString(tickers[0].date),
     };
   }
 
-  async getNews(symbol: string): Promise<NewsItem[]> {
-    const news = await yahooFinance.news({ symbols: [symbol] });
-    return news.map((item) => ({
-      title: item.title,
-      link: item.link,
-    }));
+  async close(): Promise<void> {
+    if (this.browser) {
+      await this.browser.close();
+      logger.info('Browser closed');
+    }
+  }
+
+  private validateResponse(response: unknown): asserts response is MarketApiResponse {
+    if (!response || typeof response !== 'object') throw new Error('Invalid API response');
+    if (!('data' in response) || !Array.isArray(response.data)) throw new Error('Missing data array');
+  }
+
+  private mapToMarketTickerData(raw: any): MarketTickerData {
+    return {
+      stockCode: raw.StockCode,
+      stockName: raw.StockName,
+      close: raw.Close,
+      volume: raw.Volume,
+      foreignBuy: raw.ForeignBuy,
+      foreignSell: raw.ForeignSell,
+      // Map remaining 24+ fields
+    };
   }
 }
 ```
 
-**Key**: Translate external API response to your domain model. Hide all SDK details.
+**Key principles:**
+- ✅ All external SDK calls wrapped in adapter methods
+- ✅ Data validation before returning
+- ✅ DTO types separate from domain entities
+- ✅ Error handling per SDK (throw descriptive errors)
+- ✅ Resource cleanup (browser close, connections, etc.)
 
 ---
 
-## Step 3: Use in Application Layer
+## Step 4: Use in Application Layer
 
 The use case depends on the contract, not the implementation:
 
