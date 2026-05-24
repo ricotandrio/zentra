@@ -154,15 +154,25 @@ export class MarketScraperAdapter {
       .sort((a, b) => b.frequency - a.frequency)
       .slice(0, 10);
 
-    // Foreign top buy: sort by foreign buy descending
-    const foreignTopBuy = [...tickers]
-      .sort((a, b) => b.foreignBuy - a.foreignBuy)
-      .slice(0, 10);
+    // Foreign top net buy: sort by (foreignBuy - foreignSell) descending
+    const foreignTopNetBuy = [...tickers]
+      .map((t) => ({
+        ...t,
+        netBuy: t.foreignBuy - t.foreignSell,
+      }))
+      .sort((a, b) => b.netBuy - a.netBuy)
+      .slice(0, 10)
+      .map(({ netBuy: _, ...t }) => t);
 
-    // Foreign top sell: sort by foreign sell descending
-    const foreignTopSell = [...tickers]
-      .sort((a, b) => b.foreignSell - a.foreignSell)
-      .slice(0, 10);
+    // Foreign top net sell: sort by (foreignSell - foreignBuy) descending
+    const foreignTopNetSell = [...tickers]
+      .map((t) => ({
+        ...t,
+        netSell: t.foreignSell - t.foreignBuy,
+      }))
+      .sort((a, b) => b.netSell - a.netSell)
+      .slice(0, 10)
+      .map(({ netSell: _, ...t }) => t);
 
     // Date
     const date = tickers[0] ? isoDateToLocaleString(tickers[0].date) : 'Error: No date available';
@@ -173,8 +183,8 @@ export class MarketScraperAdapter {
       bottomVolume,
       topValue,
       topFrequency,
-      foreignTopBuy,
-      foreignTopSell,
+      foreignTopNetBuy,
+      foreignTopNetSell,
       totalTickers: tickers.length,
       totalVolume,
       totalValue,

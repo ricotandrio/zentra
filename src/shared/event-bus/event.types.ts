@@ -71,18 +71,7 @@ export interface MarketSummaryCompleteEvent extends DomainEvent {
   data: {
     channelId: string;
     timestamp: string;
-    summary: {
-      topVolume: Array<{ stockCode: string; volume: number }> | [];
-      bottomVolume: Array<{ stockCode: string; volume: number }> | [];
-      topValue: Array<{ stockCode: string; value: number }> | [];
-      topFrequency: Array<{ stockCode: string; frequency: number }> | [];
-      foreignTopBuy: Array<{ stockCode: string; foreignBuy: number }> | [];
-      foreignTopSell: Array<{ stockCode: string; foreignSell: number }> | [];
-      totalTickers: number;
-      totalVolume: number;
-      totalValue: number;
-      averageChangePercent: number;
-    };
+    summary: any; // MarketSummary type - flexible to avoid circular imports
   };
 }
 

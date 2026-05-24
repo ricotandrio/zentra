@@ -45,8 +45,8 @@ export interface MarketSummary {
   bottomVolume: MarketTickerData[];
   topValue: MarketTickerData[];
   topFrequency: MarketTickerData[];
-  foreignTopBuy: MarketTickerData[];
-  foreignTopSell: MarketTickerData[];
+  foreignTopNetBuy: MarketTickerData[];
+  foreignTopNetSell: MarketTickerData[];
   totalTickers: number;
   totalVolume: number;
   totalValue: number;

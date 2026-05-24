@@ -24,14 +24,20 @@ export class MarketSummaryDiscordResultUseCase {
       .map((t) => `${t.stockCode}: ${t.frequency} trades`)
       .join('\n');
 
-    const foreignBuyList = summary.foreignTopBuy
+    const foreignBuyList = summary.foreignTopNetBuy
       .slice(0, MAX_ENTRIES)
-      .map((t) => `${t.stockCode}: ${t.foreignBuy.toLocaleString('id-ID')} shares`)
+      .map((t) => {
+        const net = t.foreignBuy - t.foreignSell;
+        return `${t.stockCode}: ${net > 0 ? '+' : ''}${net.toLocaleString('id-ID')} shares`;
+      })
       .join('\n');
 
-    const foreignSellList = summary.foreignTopSell
+    const foreignSellList = summary.foreignTopNetSell
       .slice(0, MAX_ENTRIES)
-      .map((t) => `${t.stockCode}: ${t.foreignSell.toLocaleString('id-ID')} shares`)
+      .map((t) => {
+        const net = t.foreignSell - t.foreignBuy;
+        return `${t.stockCode}: ${net > 0 ? '+' : ''}${net.toLocaleString('id-ID')} shares`;
+      })
       .join('\n');
 
     return new EmbedBuilder()
@@ -60,12 +66,12 @@ export class MarketSummaryDiscordResultUseCase {
           inline: true,
         },
         {
-          name: '🇮🇩 Foreign Top Buy',
+          name: '🟢 Foreign Top Net Buy',
           value: foreignBuyList || 'No data',
           inline: true,
         },
         {
-          name: '🇮🇩 Foreign Top Sell',
+          name: '🔴 Foreign Top Net Sell',
           value: foreignSellList || 'No data',
           inline: true,
         }
