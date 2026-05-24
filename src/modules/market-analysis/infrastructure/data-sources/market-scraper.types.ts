@@ -40,6 +40,7 @@ export interface MarketTickerData {
  * Contains aggregated market statistics
  */
 export interface MarketSummary {
+  date: string;
   topVolume: MarketTickerData[];
   bottomVolume: MarketTickerData[];
   topValue: MarketTickerData[];

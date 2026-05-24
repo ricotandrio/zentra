@@ -31,3 +31,22 @@ export const convertCronScheduleHour = (
 
   return cronSchedule; // If hour is '*', return as is since it runs every hour
 };
+
+/** * Converts an ISO date string to a localized date string in Indonesian format.
+ * 
+ * @param isoDate - The ISO date string to convert (e.g., '2024-06-01T12:00:00Z')
+ * @returns A localized date string formatted for Indonesian locale (e.g., '01 Jun 2024, 19:00:00')
+ */
+export const isoDateToLocaleString = (isoDate: string): string => {
+  if (!isoDate) return 'Invalid date';
+  
+  const date = new Date(isoDate);
+  return date.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+};

@@ -3,6 +3,7 @@ import { MarketTickerData, MarketApiResponse } from './market-scraper.types';
 import { logger } from '@/shared/logger';
 import { MARKET_SUMMARY_URL } from '@/shared/config';
 import { MarketSummary } from './market-scraper.types';
+import { isoDateToLocaleString } from '../../../../shared/utils/function';
 
 const MARKET_DATA_URL = MARKET_SUMMARY_URL;
 
@@ -163,7 +164,11 @@ export class MarketScraperAdapter {
       .sort((a, b) => b.foreignSell - a.foreignSell)
       .slice(0, 10);
 
+    // Date
+    const date = tickers[0] ? isoDateToLocaleString(tickers[0].date) : 'Error: No date available';
+
     return {
+      date,
       topVolume,
       bottomVolume,
       topValue,

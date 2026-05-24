@@ -40,7 +40,7 @@ export class MarketSummaryDiscordResultUseCase {
     return new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle('📊 IDX Market Summary')
-      .setDescription(`Market Overview - ${new Date().toLocaleDateString('id-ID')}`)
+      .setDescription(`Market Overview - ${summary.date}`)
       .addFields(
         {
           name: '📈 Market Statistics',
