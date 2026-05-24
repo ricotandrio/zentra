@@ -72,14 +72,12 @@ cp .env.example .env
 ### Run
 
 ```bash
-# Discord bot
-npm run start:bot
+# For development (with hot reload)
+npm run dev
 
-# HTTP API
-npm run start:api
-
-# Worker (cron jobs)
-npm run start:worker
+# For production
+npm run build
+npm run start
 ```
 
 ---
