@@ -7,33 +7,30 @@ import { MarketSummary } from '@/modules/market-analysis/infrastructure/data-sou
  */
 export class MarketSummaryDiscordResultUseCase {
   formatMarketSummaryAsEmbed(summary: MarketSummary): EmbedBuilder {
-    const topVolumeList = summary.topVolume
-      .slice(0, 3)
-      .map((t) => `${t.stockCode}: ${t.volume.toLocaleString('id-ID')}`)
-      .join('\n');
+    const MAX_ENTRIES = 5;
 
-    const bottomVolumeList = summary.bottomVolume
-      .slice(0, 3)
+    const topVolumeList = summary.topVolume
+      .slice(0, MAX_ENTRIES)
       .map((t) => `${t.stockCode}: ${t.volume.toLocaleString('id-ID')}`)
       .join('\n');
 
     const topValueList = summary.topValue
-      .slice(0, 3)
+      .slice(0, MAX_ENTRIES)
       .map((t) => `${t.stockCode}: Rp${t.value.toLocaleString('id-ID')}`)
       .join('\n');
 
     const topFrequencyList = summary.topFrequency
-      .slice(0, 3)
+      .slice(0, MAX_ENTRIES)
       .map((t) => `${t.stockCode}: ${t.frequency} trades`)
       .join('\n');
 
     const foreignBuyList = summary.foreignTopBuy
-      .slice(0, 3)
+      .slice(0, MAX_ENTRIES)
       .map((t) => `${t.stockCode}: ${t.foreignBuy.toLocaleString('id-ID')} shares`)
       .join('\n');
 
     const foreignSellList = summary.foreignTopSell
-      .slice(0, 3)
+      .slice(0, MAX_ENTRIES)
       .map((t) => `${t.stockCode}: ${t.foreignSell.toLocaleString('id-ID')} shares`)
       .join('\n');
 
@@ -50,11 +47,6 @@ export class MarketSummaryDiscordResultUseCase {
         {
           name: '🔥 Top Volume',
           value: topVolumeList || 'No data',
-          inline: true,
-        },
-        {
-          name: '❄️ Bottom Volume',
-          value: bottomVolumeList || 'No data',
           inline: true,
         },
         {
@@ -79,7 +71,7 @@ export class MarketSummaryDiscordResultUseCase {
         }
       )
       .setFooter({
-        text: `Updated: ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`,
+        text: `Generated at: ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`,
       });
   }
 
