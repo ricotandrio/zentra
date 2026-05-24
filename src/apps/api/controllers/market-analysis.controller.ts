@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
-import { Logger } from 'pino';
-import { IEventBus, WorkerMarketAnalysisTriggerEvent } from '@/shared';
+import { logger } from '@/shared/logger';
+import { IEventBus, WorkerMarketAnalysisTriggerEvent } from '@/shared/event-bus';
 
 export const triggerWorker = (
-  logger: Logger,
   eventBus?: IEventBus
 ) => {
   return async (req: Request, res: Response): Promise<void> => {

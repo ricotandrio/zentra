@@ -1,13 +1,10 @@
 import { Router } from 'express';
-import { Logger } from 'pino';
 import { pingController } from '../controllers/health.controller';
 
-export const createHealthRoutes = (
-  logger: Logger
-): Router => {
+export const createHealthRoutes = (): Router => {
   const router = Router();
 
-  router.get('/ping', pingController(logger));
+  router.get('/ping', pingController());
 
   return router;
 };

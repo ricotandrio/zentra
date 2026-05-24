@@ -1,5 +1,5 @@
 import { Client as DiscordClient, EmbedBuilder } from 'discord.js';
-import { Logger } from 'pino';
+import { logger } from '@/shared/logger';
 import { IEventBus, MarketAnalysisCompleteEvent, MarketAnalysisErrorEvent } from '@/shared/event-bus';
 import { WorkerWebhookPayload } from '@/modules/market-analysis/contracts/market-results.dto';
 import { ProcessMarketAnalysisResultsUseCase } from '@/modules/market-analysis/application/usecases/process-market-results.usecase';
@@ -13,8 +13,7 @@ import { ProcessMarketAnalysisResultsUseCase } from '@/modules/market-analysis/a
  */
 export const registerMarketAnalysisSubscriber = (
   discordClient: DiscordClient,
-  eventBus: IEventBus,
-  logger: Logger
+  eventBus: IEventBus
 ): void => {
   // Subscribe to successful market analysis completion
   eventBus.subscribe<MarketAnalysisCompleteEvent>(

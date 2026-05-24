@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
-import { Logger } from 'pino';
+import { logger } from '@/shared/logger';
 
-export const pingController = (
-  logger: Logger
-) => {
+export const pingController = () => {
   return async (req: Request, res: Response): Promise<void> => {
     logger.info({ endpoint: '/ping' }, 'Ping endpoint called');
     res.json({ message: 'pong' });

@@ -1,5 +1,5 @@
 import { Message } from 'discord.js';
-import { Logger } from 'pino';
+import { logger } from '@/shared/logger';
 import { IEventBus } from '@/shared/event-bus';
 
 /**
@@ -8,7 +8,6 @@ import { IEventBus } from '@/shared/event-bus';
  */
 export const handleNaturalLanguageMessage = async (
   message: Message,
-  logger: Logger,
   _eventBus?: IEventBus
 ) => {
   try {

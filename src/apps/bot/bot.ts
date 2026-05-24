@@ -1,5 +1,4 @@
 import { AutocompleteInteraction, ChatInputCommandInteraction, Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, SlashCommandOptionsOnlyBuilder } from 'discord.js';
-import { Logger } from 'pino';
 import { handleNaturalLanguageMessage } from './handlers';
 import * as ping from './commands/ping.command';
 import * as addTicker from './commands/add-ticker.command';
@@ -8,6 +7,7 @@ import * as marketSummary from './commands/market-summary.command';
 import { IEventBus } from '@/shared/event-bus';
 import { registerMarketAnalysisSubscriber } from './subscribers';
 import { TickerManagementModule } from '@/modules/ticker-management';
+import { logger } from '@/shared/logger';
 
 export interface BotCommandWithDeps {
   data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder;
@@ -33,15 +33,14 @@ export const botCommands: Record<string, BotCommandWithDeps> = {
 export const deployBot = async (
   rest: REST,
   clientId: string,
-  guildId: string,
-  logger: Logger
+  guildId: string
 ) => {
   try {
     const body = Object
       .values(botCommands)
       .filter(cmd => {
         if (!cmd || !cmd.data) {
-          console.error('Invalid command detected:', cmd);
+          logger.error('Invalid command detected:', cmd);
           return false;
         }
         return true;
@@ -68,7 +67,6 @@ export const deployBot = async (
 
 const registerHandlers = (
   client: Client,
-  logger: Logger,
   eventBus?: IEventBus,
   tickerManagementModule?: TickerManagementModule
 ) => {
@@ -122,7 +120,6 @@ export const startBot = async (
   clientId: string,
   guildId: string,
   standupChannelId: string,
-  logger: Logger,
   eventBus?: IEventBus,
   tickerManagementModule?: TickerManagementModule
 ): Promise<Client> => {
@@ -137,9 +134,9 @@ export const startBot = async (
 
   const rest = new REST().setToken(botToken);
 
-  await deployBot(rest, clientId, guildId, logger);
+  await deployBot(rest, clientId, guildId);
 
-  registerHandlers(client, logger, eventBus, tickerManagementModule);
+  registerHandlers(client, eventBus, tickerManagementModule);
 
   // Register event bus subscribers for market analysis delivery
   if (eventBus) {

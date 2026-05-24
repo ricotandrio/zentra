@@ -3,9 +3,10 @@ import { env } from '@/config';
 import { logger } from '@/shared/logger';
 import { startExpressApp } from '@/apps/api';
 import { startBot } from '@/apps/bot';
-import { MarketAnalysisScheduler, MarketAnalysisSubscriber } from '@/modules/market-analysis';
+import { MarketAnalysisJob, MarketAnalysisSubscriber } from '@/modules/market-analysis';
 import { createTickerManagementModule } from '@/modules/ticker-management';
 import { initializeEventBus } from '@/shared/event-bus';
+import { Scheduler } from '@/shared/scheduler';
 
 
 /**
@@ -16,6 +17,9 @@ logger.info('Event bus initialized');
 
 const tickerManagementModule = createTickerManagementModule();
 logger.info('Ticker management module initialized');
+
+const scheduler = new Scheduler();
+logger.info('Scheduler initialized');
 
 let discordClient: Client;
 
@@ -33,33 +37,31 @@ let discordClient: Client;
     clientId,
     guildId,
     channelId,
-    logger,
     eventBus,
     tickerManagementModule
   );
   logger.info('Discord bot started');
 
-  startExpressApp(env.EXPRESS.PORT, logger, discordClient, eventBus);
+  startExpressApp(env.EXPRESS.PORT, discordClient, eventBus);
   logger.info('Express API server started');
 
-  const scheduler = new MarketAnalysisScheduler({
-    logger,
-    channelId,
+  const marketAnalysisJob = new MarketAnalysisJob({
     eventBus,
+    channelId,
     tickerManagementModule,
   });
+
+  scheduler.register(marketAnalysisJob);
   logger.info('Market analysis scheduler initialized');
 
   const subscriber = new MarketAnalysisSubscriber(
     eventBus,
-    logger,
     channelId,
     tickerManagementModule
   );
   logger.info('Market analysis subscriber initialized');
 
   subscriber.subscribe();
-  scheduler.start();
 
   logger.info('All systems started (API + Bot + Worker)');
 })().catch((error) => {

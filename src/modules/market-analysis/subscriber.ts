@@ -1,7 +1,7 @@
-import { Logger } from 'pino';
 import { IEventBus, MarketAnalysisCompleteEvent, MarketAnalysisErrorEvent, WorkerMarketAnalysisTriggerEvent } from '@/shared/event-bus';
 import { MarketAnalysisJob } from './job';
 import { TickerManagementModule } from '@/modules/ticker-management';
+import { logger } from '@/shared/logger';
 
 /**
  * Market Analysis Event Subscriber
@@ -11,7 +11,6 @@ import { TickerManagementModule } from '@/modules/ticker-management';
 export class MarketAnalysisSubscriber {
   constructor(
     private eventBus: IEventBus, 
-    private logger: Logger, 
     private channelId: string,
     private tickerManagementModule: TickerManagementModule
   ) {}
@@ -36,7 +35,7 @@ export class MarketAnalysisSubscriber {
       this.handleError.bind(this)
     );
 
-    this.logger.info('Market analysis subscriber initialized');
+    logger.info('Market analysis subscriber initialized');
 
     return { unsubscribeComplete, unsubscribeError, unsubscribeTrigger };
   }
@@ -46,14 +45,13 @@ export class MarketAnalysisSubscriber {
    */
   private async handleTrigger(event: WorkerMarketAnalysisTriggerEvent): Promise<void> {
     const job = new MarketAnalysisJob({
-      logger: this.logger,
       eventBus: this.eventBus,
       channelId: this.channelId,
       tickerManagementModule: this.tickerManagementModule,
     });
     await job.execute();
 
-    this.logger.info(
+    logger.info(
       { timestamp: event.timestamp },
       'Received market analysis trigger event - worker should start analysis'
     );
@@ -64,7 +62,7 @@ export class MarketAnalysisSubscriber {
    */
   private async handleComplete(event: MarketAnalysisCompleteEvent): Promise<void> {
     const { data } = event;
-    this.logger.info(
+    logger.info(
       {
         resultsCount: data.results.length,
         channelId: data.channelId,
@@ -83,7 +81,7 @@ export class MarketAnalysisSubscriber {
       {} as Record<string, number>
     );
 
-    this.logger.debug({ sentiments }, 'Sentiment distribution');
+    logger.debug({ sentiments }, 'Sentiment distribution');
   }
 
   /**
@@ -91,7 +89,7 @@ export class MarketAnalysisSubscriber {
    */
   private async handleError(event: MarketAnalysisErrorEvent): Promise<void> {
     const { data } = event;
-    this.logger.error(
+    logger.error(
       {
         error: data.error,
         timestamp: data.timestamp,

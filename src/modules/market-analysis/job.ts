@@ -1,13 +1,12 @@
-import { Logger } from 'pino';
 import { IEventBus, MarketAnalysisCompleteEvent, MarketAnalysisErrorEvent } from '@/shared/event-bus';
 import { TickerManagementModule } from '@/modules/ticker-management';
 import { AnalyzeMarketUseCase } from './application/usecases/analyze-market.usecase';
 import { SchedulerJob } from '@/shared/scheduler/scheduler.types';
 import { convertCronScheduleHour, Utc } from '@/shared/utils';
+import { logger } from '@/shared/logger';
 
 interface MarketAnalysisJobConfig {
   channelId: string;
-  logger: Logger;
   eventBus: IEventBus;
   tickerManagementModule: TickerManagementModule
 }
@@ -19,7 +18,7 @@ export class MarketAnalysisJob implements SchedulerJob {
   constructor(private config: MarketAnalysisJobConfig) {}
 
   async execute(): Promise<void> {
-    const { channelId, logger, eventBus, tickerManagementModule } = this.config;
+    const { channelId, eventBus, tickerManagementModule } = this.config;
 
     try {
       logger.info('Starting market analysis job');
@@ -89,6 +88,7 @@ export class MarketAnalysisJob implements SchedulerJob {
         },
       };
 
+      logger.error(error, 'Error executing market analysis job');
       await this.config.eventBus.publish(errorEvent);
       throw error;
     }
