@@ -1,13 +1,44 @@
 ---
 name: code-standards
-description: Naming conventions, file organization, imports, and code style for Zentra. Use for "how should I name this", "where do imports go", code structure questions, or type definitions.
+description: Naming conventions, file organization, imports, and code style for Zentra. Use for "how should I name this", "where do imports go", code structure questions, or type definitions. Includes modular architecture patterns.
 user-invocable: true
 disable-model-invocation: false
 ---
 
 # Code Standards & Organization
 
-Naming conventions, imports, file structure for Zentra code.
+Naming conventions, imports, file structure for Zentra's modular clean architecture.
+
+## Module Structure
+
+Each feature module follows clean architecture layers:
+
+```
+src/modules/<feature>/
+├── domain/
+│   ├── entities/
+│   │   └── <entity>.entity.ts              # Value objects, aggregates
+│   └── repositories/
+│       └── <entity>.repository.ts          # Interface/port (abstract)
+├── application/
+│   └── usecases/
+│       ├── <action>.usecase.ts             # Orchestration
+│       └── index.ts                        # Barrel export
+├── infrastructure/
+│   ├── db/
+│   │   ├── <database>.ts                   # DB setup/migrations
+│   │   └── <type>-<entity>.repository.ts   # Adapter (implementation)
+│   └── data-sources/
+│       ├── <source>.adapter.ts             # External service wrapper
+│       └── <source>.types.ts               # DTO/response types
+├── job.ts                                  # Scheduled job (optional)
+├── scheduler.ts                            # Cron config (optional)
+├── subscriber.ts                           # Event handler (optional)
+├── index.ts                                # Module public exports
+└── module.ts                               # DI factory
+```
+
+---
 
 ## File Naming Convention
 
@@ -15,26 +46,29 @@ Naming conventions, imports, file structure for Zentra code.
 
 Use these suffixes strictly. No exceptions.
 
-| Suffix | Use For | Example |
-|--------|---------|---------|
-| `*.usecase.ts` | Application use cases | `analyze-market.usecase.ts` |
-| `*.entity.ts` | Domain entities | `ticker.entity.ts` |
-| `*.adapter.ts` | Infrastructure adapters | `yahoo.adapter.ts` |
-| `*.repository.ts` | Repository implementations | `ticker.repository.ts` |
-| `*.contract.ts` | Port/interface definitions | `market-data.contract.ts` |
-| `*.service.ts` | Domain services | `sentiment.service.ts` |
-| `*.job.ts` | Background job implementations | `market-analysis.job.ts` |
-| `*.scheduler.ts` | Job schedulers | `market-analysis.scheduler.ts` |
-| `*.command.ts` | Discord slash commands | `add-ticker.command.ts` |
-| `*.controller.ts` | API controllers | `market.controller.ts` |
-| `*.dto.ts` | Data transfer objects | `market-results.dto.ts` |
-| `*.event.ts` | Event definitions | event types go in `event.types.ts` |
+| Suffix | Use For | Example | Location |
+|--------|---------|---------|----------|
+| `*.usecase.ts` | Application use cases | `analyze-market.usecase.ts` | `application/usecases/` |
+| `*.entity.ts` | Domain entities | `ticker.entity.ts` | `domain/entities/` |
+| `*.adapter.ts` | Infrastructure adapters | `market-scraper.adapter.ts` | `infrastructure/data-sources/` |
+| `*.types.ts` | DTO/response types | `market-scraper.types.ts` | `infrastructure/data-sources/` |
+| `*.repository.ts` | Repository interfaces & implementations | `ticker.repository.ts` | `domain/repositories/` or `infrastructure/db/` |
+| `*.contract.ts` | Port/interface definitions (external services) | `market-data.contract.ts` | `application/contracts/` |
+| `*.service.ts` | Domain services | `sentiment.service.ts` | `domain/services/` |
+| `*.job.ts` | Background job implementations | `market-analysis.job.ts` | module root |
+| `*.scheduler.ts` | Job schedulers | `market-analysis.scheduler.ts` | module root |
+| `*.subscriber.ts` | Event handlers | `market-summary.subscriber.ts` | module root or `apps/bot/subscribers/` |
+| `*.command.ts` | Discord slash commands | `add-ticker.command.ts` | `apps/bot/commands/` |
+| `*.controller.ts` | API controllers | `market.controller.ts` | `apps/api/controllers/` |
+| `*.dto.ts` | Data transfer objects | `market-results.dto.ts` | `application/dto/` |
+| `module.ts` | Module DI factory | `module.ts` | module root |
 
 **Rule**: Use kebab-case (lowercase, hyphens), always include the suffix.
 
 ✅ `analyze-market.usecase.ts`  
+✅ `market-scraper.adapter.ts`  
 ❌ `analyzeMarketUseCase.ts`  
-❌ `AnalyzeMarketUseCase.ts`  
+❌ `MarketScraperAdapter.ts`  
 ❌ `analyze_market_usecase.ts`
 
 ---
@@ -48,14 +82,57 @@ Classes use PascalCase, even in kebab-case files:
 export class AnalyzeMarketUseCase {}
 
 // ticker.entity.ts
-export class TickerEntity {}
+export class Ticker {}
 
-// yahoo.adapter.ts
-export class YahooAdapter {}
+// market-scraper.adapter.ts
+export class MarketScraperAdapter {}
 
-// market-data.contract.ts
-export interface IMarketDataAdapter {}
+// ticker.repository.ts
+export interface ITickerRepository {}
+export class SqliteTickerRepository implements ITickerRepository {}
 ```
+
+---
+
+### Interface Naming (Ports)
+
+Domain repository interfaces use `I` prefix:
+
+```typescript
+// domain/repositories/ticker.repository.ts
+export interface ITickerRepository {
+  add(ticker: Ticker): Promise<void>;
+  get(symbol: string): Promise<Ticker | null>;
+  remove(symbol: string): Promise<void>;
+}
+
+// infrastructure/db/sqlite-ticker.repository.ts
+export class SqliteTickerRepository implements ITickerRepository {
+  // Concrete implementation
+}
+```
+
+---
+
+### Module Factory Naming
+
+Each module exports a factory function and interface:
+
+```typescript
+// ticker-management/module.ts
+export interface TickerManagementModule {
+  addTickerUseCase: AddTickerUseCase;
+  removeTickerUseCase: RemoveTickerUseCase;
+  getTickersUseCase: GetTickersUseCase;
+  closeDb: () => void;  // Resource cleanup
+}
+
+export function createTickerManagementModule(): TickerManagementModule {
+  // Setup and return module
+}
+```
+
+**Pattern**: `{Feature}Module` interface, `create{Feature}Module()` factory.
 
 ---
 
@@ -66,25 +143,22 @@ Directories use kebab-case, singular or plural based on content:
 ```
 src/
 ├── bootstrap/          # Multiple files, plural
-├── domain/             # Layer, singular
-├── application/        # Layer, singular
-│   ├── use-cases/      # Multiple, plural
-│   ├── contracts/      # Multiple, plural
-│   ├── dto/            # Multiple, plural
-│   └── orchestrators/  # Multiple, plural
-├── infrastructure/     # Layer, singular
-│   ├── external/       # Services/adapters, plural
-│   └── persistence/    # Database, plural
-├── interfaces/         # Layer, plural (multiple entry types)
-│   ├── api/            # API entry, singular
-│   ├── bot/            # Bot entry, singular
-│   └── worker/         # Worker entry, singular
+├── modules/            # Multiple modules
+│   ├── ticker-management/   # Feature module, singular
+│   └── market-analysis/     # Feature module, singular
+├── apps/               # Multiple app entries
+│   ├── api/            # API app, singular
+│   ├── bot/            # Bot app, singular
+│   └── web/            # Web frontend, singular
 ├── shared/             # Shared layer, singular
 │   ├── logger/         # Concern, singular
 │   ├── event-bus/      # Concern, singular
-│   └── errors/         # Multiple errors, plural
-└── config/             # Configuration, singular
+│   ├── scheduler/      # Concern, singular
+│   ├── config/         # Configuration, singular
+│   └── utils/          # Utilities, plural
 ```
+
+**Pattern**: Feature modules in `src/modules/<feature>/`, apps in `src/apps/<app>/`.
 
 ---
 
@@ -92,7 +166,7 @@ src/
 
 ### Adapter Instances
 ```typescript
-const githubAdapter = new GitHubAdapter();
+const marketScraperAdapter = new MarketScraperAdapter();
 const yahooAdapter = new YahooAdapter();
 const geminiAdapter = new GeminiAdapter();
 ```

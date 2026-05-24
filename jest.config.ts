@@ -11,4 +11,5 @@ export default {
     '!src/**/*.d.ts',
     '!src/bootstrap/**',
   ],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
 };

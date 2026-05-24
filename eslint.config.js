@@ -3,7 +3,7 @@ const tseslint = require('typescript-eslint')
 
 module.exports = [
   {
-    ignores: ['node_modules/', 'dist/', 'build/', "src/interfaces/web/public/"],
+    ignores: ['node_modules/', 'dist/', 'build/', "src/apps/web/public/"],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

@@ -61,6 +61,21 @@ export interface MarketAnalysisErrorEvent extends DomainEvent {
 }
 
 /**
+ * Market summary job has completed
+ * Published by: Worker
+ * Subscribed by: Bot (for Discord delivery)
+ */
+export interface MarketSummaryCompleteEvent extends DomainEvent {
+  type: 'market-summary:complete';
+  source: 'worker';
+  data: {
+    channelId: string;
+    timestamp: string;
+    summary: any; // MarketSummary type - flexible to avoid circular imports
+  };
+}
+
+/**
  * Ticker added by bot command or API
  * Published by: Bot, API
  * Subscribed by: Worker (to start tracking)
@@ -95,6 +110,7 @@ export type ApplicationEvent =
   | WorkerMarketAnalysisTriggerEvent
   | MarketAnalysisCompleteEvent
   | MarketAnalysisErrorEvent
+  | MarketSummaryCompleteEvent
   | TickerAddedEvent
   | TickerRemovedEvent;
 
