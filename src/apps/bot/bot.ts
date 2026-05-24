@@ -2,6 +2,7 @@ import { AutocompleteInteraction, ChatInputCommandInteraction, Client, GatewayIn
 import { handleNaturalLanguageMessage } from './handlers';
 import * as ping from './commands/ping.command';
 import * as addTicker from './commands/add-ticker.command';
+import * as removeTicker from './commands/remove-ticker.command';
 import * as listTickers from './commands/list-tickers.command';
 import * as marketSummary from './commands/market-summary.command';
 import { IEventBus } from '@/shared/event-bus';
@@ -26,6 +27,7 @@ export interface BotCommand extends BotCommandWithDeps {
 export const botCommands: Record<string, BotCommandWithDeps> = {
   ping: ping as BotCommand,
   'add-ticker': addTicker as BotCommandWithDeps,
+  'remove-ticker': removeTicker as BotCommandWithDeps,
   'list-tickers': listTickers as BotCommandWithDeps,
   'market-summary': marketSummary as BotCommandWithDeps,
 };
