@@ -4,7 +4,6 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++
 COPY package*.json ./
 RUN npm ci
-# Install Playwright browsers
 RUN npx playwright install --with-deps
 
 # Build Stage
