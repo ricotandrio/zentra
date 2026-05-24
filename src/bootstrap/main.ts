@@ -1,30 +1,23 @@
 import { Client } from 'discord.js';
 import { env } from '@/config';
-import { getLogger, initializeEventBus } from '@/shared';
-import { startExpressApp } from '@/interfaces/api';
-import { startBot } from '@/interfaces/bot';
-import { initDatabase } from '@/infrastructure/persistence/db/database';
-import { SqliteTickerRepository } from '@/infrastructure/persistence/db/sqlite-ticker.repository';
-import { MarketAnalysisScheduler, MarketAnalysisSubscriber } from '@/interfaces/worker/market-analysis';
+import { logger } from '@/shared/logger';
+import { startExpressApp } from '@/apps/api';
+import { startBot } from '@/apps/bot';
+import { MarketAnalysisScheduler, MarketAnalysisSubscriber } from '@/modules/market-analysis';
+import { createTickerManagementModule } from '@/modules/ticker-management';
+import { initializeEventBus } from '@/shared/event-bus';
 
 
 /**
  * Shared dependencies initialization
  */
-const logger = getLogger();
-logger.info('Logger initialized');
-
 const eventBus = initializeEventBus();
 logger.info('Event bus initialized');
 
-const db = initDatabase();
-logger.info('Database initialized');
-
-const tickerRepository = new SqliteTickerRepository(db);
-logger.info('Ticker repository initialized');
+const tickerManagementModule = createTickerManagementModule();
+logger.info('Ticker management module initialized');
 
 let discordClient: Client;
-
 
 /**
  * Main application entry point
@@ -41,8 +34,8 @@ let discordClient: Client;
     guildId,
     channelId,
     logger,
-    tickerRepository,
-    eventBus
+    eventBus,
+    tickerManagementModule
   );
   logger.info('Discord bot started');
 
@@ -51,17 +44,17 @@ let discordClient: Client;
 
   const scheduler = new MarketAnalysisScheduler({
     logger,
-    tickerRepository,
     channelId,
     eventBus,
+    tickerManagementModule,
   });
   logger.info('Market analysis scheduler initialized');
 
   const subscriber = new MarketAnalysisSubscriber(
     eventBus,
     logger,
-    tickerRepository,
-    channelId
+    channelId,
+    tickerManagementModule
   );
   logger.info('Market analysis subscriber initialized');
 
@@ -84,6 +77,6 @@ process.on('SIGINT', shutdown);
 function shutdown() {
   logger.info('Shutting down...');
   discordClient.destroy();
-  db.close();
+  tickerManagementModule.closeDb();
   process.exit(0);
 }

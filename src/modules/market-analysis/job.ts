@@ -1,0 +1,96 @@
+import { Logger } from 'pino';
+import { IEventBus, MarketAnalysisCompleteEvent, MarketAnalysisErrorEvent } from '@/shared/event-bus';
+import { TickerManagementModule } from '@/modules/ticker-management';
+import { AnalyzeMarketUseCase } from './application/usecases/analyze-market.usecase';
+import { SchedulerJob } from '@/shared/scheduler/scheduler.types';
+import { convertCronScheduleHour, Utc } from '@/shared/utils';
+
+interface MarketAnalysisJobConfig {
+  channelId: string;
+  logger: Logger;
+  eventBus: IEventBus;
+  tickerManagementModule: TickerManagementModule
+}
+
+export class MarketAnalysisJob implements SchedulerJob {
+  name = 'MarketAnalysisJob';
+  schedule = convertCronScheduleHour('0 18 * * *', Utc.UTC7, Utc.UTC0); // 6 PM UTC+7
+
+  constructor(private config: MarketAnalysisJobConfig) {}
+
+  async execute(): Promise<void> {
+    const { channelId, logger, eventBus, tickerManagementModule } = this.config;
+
+    try {
+      logger.info('Starting market analysis job');
+
+      const tickers = await tickerManagementModule.getTickersUseCase.execute();
+
+      if (!tickers || tickers.length === 0) {
+        logger.info('No tickers to analyze');
+        return;
+      }
+
+      const analyzeUseCase = new AnalyzeMarketUseCase();
+      const tickerSymbols = tickers.map((t) => t.symbol);
+
+      logger.info(`Analyzing ${tickerSymbols.length} tickers`);
+
+      const analyses = await analyzeUseCase.execute(tickerSymbols);
+
+      const results = analyses.map((analysis) => ({
+        ticker: analysis.quote.ticker,
+        price: analysis.quote.price,
+        changePercent: analysis.quote.changePercent,
+        sentiment: analysis.overallSentiment,
+        volume: analysis.quote.volume,
+        fiftyTwoWeekHigh: analysis.quote.fiftyTwoWeekHigh,
+        fiftyTwoWeekLow: analysis.quote.fiftyTwoWeekLow,
+        newsCount: analysis.news.length,
+        topHeadlines: analysis.news.slice(0, 3).map((n) => n.title),
+      }));
+
+      // Convert SentimentResult to string format for DTO
+      const formattedResults = results.map((r) => ({
+        ...r,
+        sentiment: `${r.sentiment.label}:${r.sentiment.score}`,
+      }));
+
+      // Build and publish event
+      const event: MarketAnalysisCompleteEvent = {
+        type: 'market-analysis:complete',
+        source: 'worker',
+        timestamp: new Date(),
+        data: {
+          channelId,
+          timestamp: new Date().toISOString(),
+          results: formattedResults,
+        },
+      };
+
+      logger.info(`Publishing market analysis complete event with ${results.length} results`);
+
+      await eventBus.publish(event);
+
+      logger.info(`Market analysis completed with ${analyses.length} results`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      logger.error(error, 'Error executing market analysis job');
+
+      // Publish error event
+      const errorEvent: MarketAnalysisErrorEvent = {
+        type: 'market-analysis:error',
+        source: 'worker',
+        timestamp: new Date(),
+        data: {
+          error: errorMessage,
+          timestamp: new Date().toISOString(),
+        },
+      };
+
+      await this.config.eventBus.publish(errorEvent);
+      throw error;
+    }
+  }
+}
