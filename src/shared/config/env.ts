@@ -28,3 +28,5 @@ export const env = {
   WEBHOOK_BASE_URL: process.env.WEBHOOK_BASE_URL || 'http://localhost:3000',
   API_BASE_URL: process.env.API_BASE_URL || 'http://localhost:3000',
 };
+
+export const MARKET_SUMMARY_URL = requireEnv('TRADING_SUMMARY_URL');

@@ -5,7 +5,7 @@ import * as addTicker from './commands/add-ticker.command';
 import * as listTickers from './commands/list-tickers.command';
 import * as marketSummary from './commands/market-summary.command';
 import { IEventBus } from '@/shared/event-bus';
-import { registerMarketAnalysisSubscriber } from './subscribers';
+import { registerMarketAnalysisSubscriber, registerMarketSummarySubscriber } from './subscribers';
 import { TickerManagementModule } from '@/modules/ticker-management';
 import { logger } from '@/shared/logger';
 
@@ -84,7 +84,7 @@ const registerHandlers = (
       return;
     }
 
-    await handleNaturalLanguageMessage(message, logger, eventBus);
+    await handleNaturalLanguageMessage(message, eventBus);
   });
 
   client.on('interactionCreate', async (interaction) => {
@@ -138,9 +138,10 @@ export const startBot = async (
 
   registerHandlers(client, eventBus, tickerManagementModule);
 
-  // Register event bus subscribers for market analysis delivery
+  // Register event bus subscribers for market analysis and summary delivery
   if (eventBus) {
-    registerMarketAnalysisSubscriber(client, eventBus, logger);
+    registerMarketAnalysisSubscriber(client, eventBus);
+    registerMarketSummarySubscriber(client, eventBus);
   }
 
   await client.login(botToken);

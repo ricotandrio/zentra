@@ -8,7 +8,7 @@ export const data = new SlashCommandBuilder()
   .addStringOption((option) =>
     option
       .setName('symbol')
-      .setDescription('IDX ticker symbol (e.g., BBCA, BMRI)')
+      .setDescription('Market ticker symbol (e.g., BBCA, BMRI)')
       .setRequired(true)
   );
 

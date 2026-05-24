@@ -2,10 +2,10 @@ import { EmbedBuilder } from 'discord.js';
 import { WorkerWebhookPayload, MarketAnalysisResultDTO } from '@/modules/market-analysis/contracts/market-results.dto';
 
 /**
- * Process Market Analysis Results Use Case
+ * Analyze Tickers Discord Result Use Case
  * Validates webhook payload from worker and formats for Discord delivery
  */
-export class ProcessMarketAnalysisResultsUseCase {
+export class AnalyzeTickersDiscordResultUseCase {
   validate(payload: unknown): payload is WorkerWebhookPayload {
     if (!payload || typeof payload !== 'object') {
       throw new Error('Invalid payload: not an object');

@@ -1,5 +1,5 @@
 import { Client } from 'discord.js';
-import { env } from '@/config';
+import { env } from '@/shared/config';
 import { logger } from '@/shared/logger';
 import { startExpressApp } from '@/apps/api';
 import { startBot } from '@/apps/bot';

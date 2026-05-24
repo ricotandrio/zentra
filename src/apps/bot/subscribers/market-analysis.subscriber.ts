@@ -2,7 +2,7 @@ import { Client as DiscordClient, EmbedBuilder } from 'discord.js';
 import { logger } from '@/shared/logger';
 import { IEventBus, MarketAnalysisCompleteEvent, MarketAnalysisErrorEvent } from '@/shared/event-bus';
 import { WorkerWebhookPayload } from '@/modules/market-analysis/contracts/market-results.dto';
-import { ProcessMarketAnalysisResultsUseCase } from '@/modules/market-analysis/application/usecases/process-market-results.usecase';
+import { AnalyzeTickersDiscordResultUseCase } from '@/modules/market-analysis/application/usecases/analyze-tickers-discord-result.usecase';
 
 /**
  * Subscribe to market analysis events from the worker
@@ -46,7 +46,7 @@ export const registerMarketAnalysisSubscriber = (
         };
 
         // Use the existing use case to process and format results
-        const useCase = new ProcessMarketAnalysisResultsUseCase();
+        const useCase = new AnalyzeTickersDiscordResultUseCase();
         const { embeds, channelId } = useCase.execute(payload);
 
         // Get Discord channel
