@@ -13,10 +13,12 @@ export class Scheduler {
         try {
           await job.execute();
         } catch (error) {
-          logger.error(
-            `[Scheduler] Job failed: ${job.name}`,
-            error
-          );
+          logger.error({
+            source: 'system',
+            operation: 'scheduler-job',
+            metadata: { jobName: job.name },
+            error,
+          }, `[Scheduler] Job failed: ${job.name}`);
         }
       }
     );

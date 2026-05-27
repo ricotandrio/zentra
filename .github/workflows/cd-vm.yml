@@ -9,7 +9,7 @@ on:
 
 jobs:
   deploy:
-    environment: STG
+    environment: PROD
     name: Deploy to VM
     runs-on: ubuntu-latest
 

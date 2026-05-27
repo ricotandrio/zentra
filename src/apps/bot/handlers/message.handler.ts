@@ -17,9 +17,18 @@ export const handleNaturalLanguageMessage = async (
     const response = `You said: ${content}`;
 
     await message.reply(response);
-    logger.info({ userId: message.author.id }, `Echoed message: ${content}`);
+    logger.info({
+      source: 'bot',
+      operation: 'handle-message',
+      metadata: { userId: message.author.id, contentLength: content.length },
+    }, `Echoed message: ${content}`);
   } catch (error) {
-    logger.error(error, 'Error handling natural language message');
+    logger.error({
+      source: 'bot',
+      operation: 'handle-message',
+      metadata: { userId: message.author.id },
+      error,
+    }, 'Error handling natural language message');
     await message.reply('Sorry, I encountered an error processing your message.');
   }
 };

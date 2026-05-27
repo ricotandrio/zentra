@@ -10,6 +10,7 @@ interface MarketAnalysisJobConfig {
   channelId: string;
   eventBus: IEventBus;
   tickerManagementModule: TickerManagementModule;
+  traceId?: string;
 }
 
 export class MarketAnalysisJob implements SchedulerJob {
@@ -19,33 +20,49 @@ export class MarketAnalysisJob implements SchedulerJob {
   constructor(private config: MarketAnalysisJobConfig) {}
 
   async execute(): Promise<void> {
-    const { tickerManagementModule } = this.config;
+    const { traceId, tickerManagementModule } = this.config;
+
+    const traceIdForThisRun = traceId || `market-analysis-${Date.now()}`;
 
     try {
-      logger.info('Starting market analysis job');
+      logger.info({
+        source: 'worker',
+        operation: 'market-analysis-job',
+        traceId: traceIdForThisRun,
+      }, 'Starting market analysis job');
 
       const tickers = await tickerManagementModule.getTickersUseCase.execute();
 
       if (!tickers || tickers.length === 0) {
-        logger.info('No tickers to analyze');
+        logger.info({
+          source: 'worker',
+          operation: 'market-analysis-job',
+          traceId: traceIdForThisRun,
+        }, 'No tickers to analyze');
         return;
       }
 
       // Analyze tickers and publish event
-      await this.analyzeTickersAndPublish(tickers);
+      await this.analyzeTickersAndPublish(tickers, traceIdForThisRun);
 
       // Fetch market summary and publish event
-      await this.publishMarketSummary();
+      await this.publishMarketSummary(traceIdForThisRun);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      logger.error(error, 'Error executing market analysis job');
+      logger.error({
+        source: 'worker',
+        operation: 'market-analysis-job',
+        error,
+        traceId: traceIdForThisRun,
+      }, 'Error executing market analysis job');
 
-      // Publish error event
+      // Publish error event with same traceId
       const errorEvent: MarketAnalysisErrorEvent = {
         type: 'market-analysis:error',
         source: 'worker',
         timestamp: new Date(),
+        traceId: traceIdForThisRun,
         data: {
           error: errorMessage,
           timestamp: new Date().toISOString(),
@@ -60,13 +77,17 @@ export class MarketAnalysisJob implements SchedulerJob {
   /**
    * Analyze tickers and publish market analysis complete event
    */
-  private async analyzeTickersAndPublish(tickers: any[]): Promise<void> {
+  private async analyzeTickersAndPublish(tickers: any[], traceId: string): Promise<void> {
     const { channelId, eventBus } = this.config;
 
     const analyzeUseCase = new AnalyzeTickersUseCase();
     const tickerSymbols = tickers.map((t) => t.symbol);
 
-    logger.info(`Analyzing ${tickerSymbols.length} tickers`);
+    logger.info({
+      source: 'worker',
+      operation: 'analyze-tickers',
+      metadata: { tickerCount: tickerSymbols.length },
+    }, `Analyzing ${tickerSymbols.length} tickers`);
 
     const analyses = await analyzeUseCase.execute(tickerSymbols);
 
@@ -89,10 +110,12 @@ export class MarketAnalysisJob implements SchedulerJob {
     }));
 
     // Build and publish event
+
     const event: MarketAnalysisCompleteEvent = {
       type: 'market-analysis:complete',
       source: 'worker',
       timestamp: new Date(),
+      traceId,
       data: {
         channelId,
         timestamp: new Date().toISOString(),
@@ -100,29 +123,43 @@ export class MarketAnalysisJob implements SchedulerJob {
       },
     };
 
-    logger.info(`Publishing market analysis complete event with ${results.length} results`);
+    logger.info({
+      source: 'worker',
+      operation: 'publish-market-analysis-complete',
+      traceId,
+      metadata: { resultsCount: results.length },
+    }, `Publishing market analysis complete event with ${results.length} results`);
 
     await eventBus.publish(event);
 
-    logger.info(`Market analysis completed with ${analyses.length} results`);
+    logger.info({
+      source: 'worker',
+      operation: 'market-analysis-complete',
+      metadata: { analysisCount: analyses.length },
+    }, `Market analysis completed with ${analyses.length} results`);
   }
 
   /**
    * Fetch market summary and publish market summary event
    */
-  private async publishMarketSummary(): Promise<void> {
+  private async publishMarketSummary(traceId: string): Promise<void> {
     const { channelId, eventBus } = this.config;
 
     try {
-      logger.info('Fetching market summary from market data source');
+      logger.info({
+        source: 'worker',
+        operation: 'fetch-market-summary',
+      }, 'Fetching market summary from market data source');
       const marketSummaryUseCase = new MarketSummaryUseCase();
       const marketSummary = await marketSummaryUseCase.execute();
 
       // Publish market summary event
+
       const marketSummaryEvent: MarketSummaryCompleteEvent = {
         type: 'market-summary:complete',
         source: 'worker',
         timestamp: new Date(),
+        traceId,
         data: {
           channelId,
           timestamp: new Date().toISOString(),
@@ -130,10 +167,19 @@ export class MarketAnalysisJob implements SchedulerJob {
         },
       };
 
-      logger.info(`Publishing market summary event with ${marketSummary.totalTickers} tickers`);
+      logger.info({
+        source: 'worker',
+        operation: 'publish-market-summary',
+        traceId,
+        metadata: { totalTickers: marketSummary.totalTickers },
+      }, `Publishing market summary event with ${marketSummary.totalTickers} tickers`);
       await eventBus.publish(marketSummaryEvent);
     } catch (error) {
-      logger.warn(error, 'Failed to fetch market summary, continuing without it');
+      logger.warn({
+        source: 'worker',
+        operation: 'fetch-market-summary',
+        error,
+      }, 'Failed to fetch market summary, continuing without it');
       // Don't throw, allow the job to complete even if market summary fails
     }
   }

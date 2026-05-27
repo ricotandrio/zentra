@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Zentra Dev Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../common/base.css" />
+  <link rel="stylesheet" href="./home.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>Zentra Dev Panel</h1>
+    </header>
+
+    <div id="home" class="tab-content active">
+      <div class="card">
+        <h3>Quick Actions</h3>
+        <p class="card-description">Common operations for testing and development</p>
+        <div class="home-actions">
+          <button onclick="triggerMarketAnalysisWorker()">Run Market Analysis</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Tools</h3>
+        <p class="card-description">Additional tools for development and testing</p>
+        <div class="home-actions">
+          <button onclick="navigateTo('api-client')">Open API Client</button>
+          <button onclick="navigateTo('logging')">View Logs</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Activity Log</h3>
+        <div id="log" class="log"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../common/base.js"></script>
+  <script src="./home.js"></script>
+</body>
+</html>

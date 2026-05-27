@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Zentra - Logging System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../common/base.css" />
+  <link rel="stylesheet" href="./logging.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>Logging System</h1>
+      <a href="../home/home.html" class="back-link">← Back to Dev Panel</a>
+    </header>
+
+    <div class="logs-panel">
+      <!-- Filters Section -->
+      <div class="card">
+        <div class="card-title-header">
+          <h3>Log Filters</h3>
+          <button class="card-hide-button" onclick="toggleCard('filtersContainer')">Hide</button>
+        </div>
+        
+        <div id="filtersContainer">
+          <div class="filter-grid">
+            <div class="filter-group">
+              <label>Source</label>
+              <select id="filterSource">
+                <option value="">All Sources</option>
+                <option value="api">API</option>
+                <option value="bot">Bot</option>
+                <option value="worker">Worker</option>
+                <option value="system">System</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label>Operation</label>
+              <input id="filterOperation" type="text" placeholder="e.g., ping, market-analysis" />
+            </div>
+
+            <div class="filter-group">
+              <label>Level</label>
+              <select id="filterLevel">
+                <option value="">All Levels</option>
+                <option value="trace">Trace</option>
+                <option value="debug">Debug</option>
+                <option value="info">Info</option>
+                <option value="warn">Warn</option>
+                <option value="error">Error</option>
+                <option value="fatal">Fatal</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label>Message Contains</label>
+              <input id="filterMessage" type="text" placeholder="Search message..." />
+            </div>
+
+            <div class="filter-group">
+              <label>Request ID</label>
+              <input id="filterRequestId" type="text" placeholder="e.g., req-123..." />
+            </div>
+
+            <div class="filter-group">
+              <label>Event ID</label>
+              <input id="filterEventId" type="text" placeholder="e.g., evt-456..." />
+            </div>
+
+            <div class="filter-group">
+              <label>Trace ID</label>
+              <input id="filterTraceId" type="text" placeholder="e.g., trace-789..." />
+            </div>
+          </div>
+
+          <div class="filter-grid">
+            <div class="filter-group">
+              <label>Start Date</label>
+              <input id="filterStartDate" type="date" />
+            </div>
+
+            <div class="filter-group">
+              <label>End Date</label>
+              <input id="filterEndDate" type="date" />
+            </div>
+
+            <div class="filter-group">
+              <label>Limit</label>
+              <input id="filterLimit" type="number" value="50" min="1" max="1000" />
+            </div>
+
+            <div class="filter-group">
+              <label>&nbsp;</label>
+              <button onclick="applyFilters()" class="btn-primary">Search Logs</button>
+              <button onclick="clearFilters()" class="btn-secondary">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistics Section -->
+      <div class="card">
+        <div class="card-title-header">
+          <h3>Statistics</h3>
+          <button class="card-hide-button" onclick="toggleCard('statsContainer')">Hide</button>
+        </div>
+
+        <div id="statsContainer">
+          <button onclick="loadStatistics()" class="btn-primary">Refresh Stats</button>
+          <div id="statsContainer" class="stats-grid"></div>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div class="card">
+        <h3>Log Results</h3>
+        <div class="results-info">
+          <span>Total Results: <strong id="resultCount">0</strong></span>
+          <span>Page <strong id="currentPage">1</strong> of <strong id="totalPages">1</strong></span>
+          <input type="hidden" id="currentOffset" value="0" />
+        </div>
+
+        <div id="logsContainer" class="logs-list"></div>
+
+        <div class="pagination">
+          <button onclick="previousPage()" class="btn-secondary">← Previous</button>
+          <button onclick="nextPage()" class="btn-secondary">Next →</button>
+        </div>
+      </div>
+
+      <!-- Log Detail Modal -->
+      <div id="logModal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closeLogModal()">&times;</span>
+          <h3>Log Details</h3>
+          <div id="logDetail" class="log-detail"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../common/base.js"></script>
+  <script src="./logging.js"></script>
+</body>
+</html>

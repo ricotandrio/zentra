@@ -48,6 +48,7 @@ let discordClient: Client;
   const marketAnalysisJob = new MarketAnalysisJob({
     eventBus,
     channelId,
+    traceId: '',
     tickerManagementModule,
   });
 
