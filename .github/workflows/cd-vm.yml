@@ -64,10 +64,7 @@ jobs:
               -e LLM_API_KEY="${{ secrets.LLM_API_KEY }}" \
               -e LLM_PROVIDER_NAME="${{ vars.LLM_PROVIDER_NAME }}" \
               -e LLM_MODEL_NAME="${{ vars.LLM_MODEL_NAME }}" \
-              -e GITHUB_PERSONAL_ACCESS_TOKEN="${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}" \
-              -e GITHUB_OWNER_USERNAME="${{ vars.GH_OWNER_USERNAME }}" \
-              -e GITHUB_REPOSITORY_NAME="${{ vars.GH_REPOSITORY_NAME }}" \
-              -e WEBHOOK_BASE_URL="${{ secrets.WEBHOOK_BASE_URL }}" \
               -e API_BASE_URL="${{ secrets.API_BASE_URL }}" \
+              -e MARKET_SUMMARY_URL="${{ secrets.MARKET_SUMMARY_URL }}" \
               ${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:latest
           EOF
