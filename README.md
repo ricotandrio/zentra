@@ -1,59 +1,22 @@
 # Zentra
 
-Zentra is a personal automation hub — a growing collection of tools and integrations built around a Discord bot interface. New features and capabilities are added continuously, so the entire codebase is structured to scale without friction.
+Zentra is a personal automation hub with growing collection of tools, automations, and integrations built around a Discord bot interface.
 
----
+The project is designed to evolve continuously, so the architecture focuses heavily on maintainability, modularity, and low-friction scaling as new capabilities are added over time.
 
-## What it does (currently)
+Some modules communicate through an in-memory event bus. The goal of this approach is to reduce coupling between modules while keeping the system operationally simple.
 
-| Feature               | Interface        | Description                                                                  |
-| --------------------- | ---------------- | ---------------------------------------------------------------------------- |
-| Natural language bot  | Discord          | Talk to Zentra in plain English — LLM routes your intent to the right action |
-| GitHub issue creation | Discord → GitHub | Ask the bot to create an issue; it handles the rest                          |
-| PR notifications      | GitHub → Discord | Get notified in Discord when a PR is opened                                  |
-| Market summary        | Worker (cron)    | Daily Yahoo Finance summary, processed and delivered via LLM                 |
-
----
+Because Zentra is currently a personal project, multiple modules can safely run within the same process without introducing unnecessary infrastructure complexity. However, the architecture is intentionally designed so modules can later be moved into separate processes with minimal impact on the overall system structure.
 
 ## Stack
 
 - **Runtime:** Node.js + TypeScript
-- **Bot:** Discord.js
-- **LLM:** Gemini (via contract — swappable)
-- **Market data:** Yahoo Finance (via contract — swappable)
-- **GitHub:** Octokit
+- **Interfaces:** Discord Bot, Express API, Web Dev Panel
 - **Architecture:** Clean Architecture, Modular Monolith
-
----
-
-## Project Structure
-
-```
-src/
-├── bootstrap/        # App startup, dependency injection
-├── domain/           # Core business rules — pure TypeScript, no dependencies
-├── application/      # Use cases, contracts, orchestrators
-├── infrastructure/   # DB, external APIs (GitHub, LLM, Yahoo)
-├── interfaces/
-│   ├── bot/          # Discord natural language handler
-│   ├── api/          # HTTP API
-│   └── worker/       # Cron jobs (market summary)
-├── shared/           # Logger, errors, utils
-└── config/           # Env and provider config
-```
-
-See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for full layer rules, dependency boundaries, and naming conventions.
-
----
-
-## Getting Started
 
 ### Prerequisites
 
-- Node 20
-- A Discord bot token
-- Gemini API key
-- GitHub personal access token
+- Node.js 20
 
 ### Install
 
@@ -75,38 +38,7 @@ cp .env.example .env
 # For development (with hot reload)
 npm run dev
 
-# For production
+# For deployment
 npm run build
 npm run start
 ```
-
----
-
-## Adding New Features
-
-Zentra is built to grow. The structure is intentionally layered so adding a new feature never requires touching unrelated parts of the system.
-
-**Adding a new bot capability:**
-
-1. Add a use case in `application/use-cases/<feature>/`
-2. Register any new external services in `infrastructure/external/`
-3. The LLM orchestrator in `application/orchestrators/` will route to it — update intent mapping there
-
-**Adding a new worker job:**
-
-1. Create a job file in `interfaces/worker/jobs/<name>.job.ts`
-2. Create the use case it calls in `application/use-cases/`
-3. Register the schedule in `interfaces/worker/schedulers/`
-
-**Adding a new interface (e.g. CLI, webhook):**
-
-1. Add it under `interfaces/<name>/`
-2. Call existing use cases — no domain or application changes needed
-
----
-
-## Architecture Principle
-
-> A new feature should only require adding files, not modifying existing layers.
-
-Dependencies flow inward: `Interfaces → Application → Domain`. Infrastructure implements domain contracts. Nothing in domain knows about the outside world.
