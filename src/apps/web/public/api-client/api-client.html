@@ -14,64 +14,61 @@
       <a href="../home/home.html" class="back-link">← Back to Home</a>
     </header>
 
-    <div class="api-panel">
+    <div>
       <!-- API Request Section -->
       <div class="card">
-        <h3>HTTP Request</h3>
+        <div class="card-title-header">
+          <h3>HTTP Request</h3>
+          <button class="card-hide-button" onclick="toggleCard('apiRequestBody')">Hide</button>
+        </div>
         <p class="card-description">Send custom HTTP requests to test API endpoints</p>
 
-        <label>Method</label>
-        <select id="method">
-          <option>GET</option>
-          <option>POST</option>
-          <option>PUT</option>
-          <option>PATCH</option>
-          <option>DELETE</option>
-          <option>HEAD</option>
-        </select>
+        <div id="apiRequestBody">
+          <label>Method</label>
+          <select id="method">
+            <option>GET</option>
+            <option>POST</option>
+            <option>PUT</option>
+            <option>PATCH</option>
+            <option>DELETE</option>
+            <option>HEAD</option>
+          </select>
 
-        <label>URL</label>
-        <input id="url" placeholder="http://localhost:3000/health/ping" />
+          <label>URL</label>
+          <input id="url" placeholder="http://localhost:3000/health/ping" />
 
-        <label>Headers (JSON)</label>
-        <textarea id="headers" rows="6">{ "Content-Type": "application/json" }</textarea>
+          <label>Headers (JSON)</label>
+          <textarea id="headers" rows="6">{ "Content-Type": "application/json" }</textarea>
 
-        <label>Body (JSON)</label>
-        <textarea id="body" rows="8">{}</textarea>
+          <label>Body (JSON)</label>
+          <textarea id="body" rows="8">{}</textarea>
 
-        <div class="button-group">
-          <button onclick="sendRequest()" class="btn-primary">Send Request</button>
-          <button onclick="clearRequest()" class="btn-secondary">Clear</button>
+          <div class="button-group">
+            <button onclick="sendRequest()" class="btn-primary">Send Request</button>
+            <button onclick="clearRequest()" class="btn-secondary">Clear</button>
+          </div>
         </div>
       </div>
 
       <!-- Custom Event Section -->
       <div class="card">
-        <h3>Emit Custom Event</h3>
+        <div class="card-title-header">
+          <h3>Emit Custom Event</h3>
+          <button class="card-hide-button" onclick="toggleCard('customEventBody')">Hide</button>
+        </div>
         <p class="card-description">Publish custom events to the event bus</p>
 
-        <label>Event Type</label>
-        <input id="eventName" placeholder="e.g., market-analysis:trigger, custom:event" />
+        <div id="customEventBody">
+          <label>Event Type</label>
+          <input id="eventName" placeholder="e.g., market-analysis:trigger, custom:event" />
 
-        <label>Event Payload (JSON)</label>
-        <textarea id="payload" rows="10">{ "symbol": "^BBCA" }</textarea>
+          <label>Event Payload (JSON)</label>
+          <textarea id="payload" rows="10">{ "symbol": "^BBCA" }</textarea>
 
-        <div class="button-group">
-          <button onclick="emitCustom()" class="btn-primary">Emit Event</button>
-          <button onclick="clearEvent()" class="btn-secondary">Clear</button>
-        </div>
-      </div>
-
-      <!-- Presets Section -->
-      <div class="card">
-        <h3>Quick Presets</h3>
-        <p class="card-description">Pre-configured requests for common operations</p>
-
-        <div class="presets-grid">
-          <button onclick="loadPreset('ping')" class="preset-btn">🏓 Health Check</button>
-          <button onclick="loadPreset('marketAnalysis')" class="preset-btn">📊 Market Analysis</button>
-          <button onclick="loadPreset('getLogs')" class="preset-btn">📝 Get Logs</button>
-          <button onclick="loadPreset('getStats')" class="preset-btn">📈 Get Stats</button>
+          <div class="button-group">
+            <button onclick="emitCustom()" class="btn-primary">Emit Event</button>
+            <button onclick="clearEvent()" class="btn-secondary">Clear</button>
+          </div>
         </div>
       </div>
 
@@ -83,6 +80,7 @@
           <button onclick="downloadResponseLog()" class="btn-secondary">Download</button>
         </div>
         <div id="responseLog" class="response-log"></div>
+      
       </div>
     </div>
   </div>

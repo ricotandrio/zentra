@@ -1,39 +1,9 @@
 /* API Client specific styles */
 
-.api-panel {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
 @media (max-width: 1200px) {
   .api-panel {
     grid-template-columns: 1fr;
   }
-}
-
-.presets-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.preset-btn {
-  padding: 10px;
-  background: #1e293b;
-  color: #e2e8f0;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.2s;
-  width: 100%;
-}
-
-.preset-btn:hover {
-  background: #334155;
-  border-color: #3b82f6;
 }
 
 .response-toolbar {

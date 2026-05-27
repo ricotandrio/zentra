@@ -84,3 +84,13 @@ function copyToClipboard(text) {
     console.error('Failed to copy:', err);
   });
 }
+
+/** 
+ * Toggle visibility of card body 
+ */
+function toggleCard(cardId) {
+  const cardBody = document.getElementById(cardId);
+  if (cardBody) {
+    cardBody.style.display = cardBody.style.display === 'none' ? 'block' : 'none';
+  }
+}
