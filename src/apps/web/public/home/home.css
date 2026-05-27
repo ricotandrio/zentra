@@ -1,0 +1,24 @@
+/* Home page specific styles */
+
+.home-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.home-actions button {
+  flex: 1;
+  min-width: 150px;
+  margin: 0;
+  padding: 12px 16px;
+}
+
+@media (max-width: 768px) {
+  .home-actions {
+    flex-direction: column;
+  }
+
+  .home-actions button {
+    width: 100%;
+  }
+}

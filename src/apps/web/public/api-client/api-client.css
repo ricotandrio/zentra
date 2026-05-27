@@ -1,0 +1,91 @@
+/* API Client specific styles */
+
+.api-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 1200px) {
+  .api-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+.presets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.preset-btn {
+  padding: 10px;
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.preset-btn:hover {
+  background: #334155;
+  border-color: #3b82f6;
+}
+
+.response-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.log-entry {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #334155;
+}
+
+.log-entry:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.log-time {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.log-method {
+  color: #60a5fa;
+  font-weight: bold;
+}
+
+.log-status {
+  font-weight: bold;
+}
+
+.log-status.success {
+  color: #4ade80;
+}
+
+.log-status.error {
+  color: #f87171;
+}
+
+.log-status.pending {
+  color: #facc15;
+}
+
+.log-body {
+  color: #cbd5e1;
+  font-size: 11px;
+  margin-top: 4px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 150px;
+  overflow: hidden;
+}

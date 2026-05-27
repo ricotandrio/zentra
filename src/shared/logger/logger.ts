@@ -34,6 +34,10 @@ const getLogPath = (): string => {
 export const logger: Logger = pino(
   {
     level: process.env.LOG_LEVEL || 'info',
+    redact: {
+      paths: ['pid', 'hostname'],
+      remove: true,
+    },
   },
   pino.transport({
     targets: [
@@ -41,8 +45,9 @@ export const logger: Logger = pino(
         target: 'pino-pretty',
         options: {
           colorize: true,
-          singleLine: false,
+          singleLine: true,
           translateTime: 'SYS:standard',
+          ignore: 'pid,hostname',
         },
       },
       {

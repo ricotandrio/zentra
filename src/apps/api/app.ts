@@ -4,6 +4,7 @@ import { logger } from '@/shared/logger';
 import { IEventBus } from '@/shared/event-bus';
 import { createHealthRoutes } from './routes/health';
 import { createWorkerRoutes } from './routes/workers';
+import { createLogsRoutes } from './routes/logs';
 import path from 'path';
 
 export const createExpressApp = (
@@ -14,7 +15,8 @@ export const createExpressApp = (
   app.use(express.json());
   app.use(createHealthRoutes());
   app.use('/workers', createWorkerRoutes(eventBus));
-  app.use('/web', express.static(path.join(process.cwd(), 'src/interfaces/web/public')));
+  app.use('/logs', createLogsRoutes());
+  app.use('/web', express.static(path.join(process.cwd(), 'src/apps/web/public')));
 
   return app;
 };
