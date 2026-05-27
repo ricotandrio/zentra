@@ -4,6 +4,7 @@ import path from 'path';
 export interface LogContext {
   source: 'api' | 'bot' | 'worker' | 'system';
   operation?: string;
+  traceId?: string;
   requestId?: string;
   eventId?: string;
   request?: {

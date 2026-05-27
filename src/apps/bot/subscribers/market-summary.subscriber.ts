@@ -28,10 +28,12 @@ export const registerMarketSummarySubscriber = (
   }>(
     'market-summary:complete',
     async (event) => {
+      const traceId = event.timestamp.toISOString();
       try {
         logger.info({
           source: 'bot',
           operation: 'deliver-market-summary',
+          traceId,
           eventId: event.timestamp.toISOString(),
           metadata: { totalTickers: event.data.summary.totalTickers },
         }, 'Bot received market summary event');
@@ -47,6 +49,7 @@ export const registerMarketSummarySubscriber = (
           logger.error({
             source: 'bot',
             operation: 'deliver-market-summary',
+            traceId,
             metadata: { channelId: event.data.channelId },
             error: 'Invalid channel: not a text channel',
           }, 'Invalid channel: not a text channel');
@@ -61,12 +64,14 @@ export const registerMarketSummarySubscriber = (
         logger.info({
           source: 'bot',
           operation: 'deliver-market-summary',
+          traceId,
           metadata: { channelId: event.data.channelId, title },
         }, 'Market summary delivered to Discord');
       } catch (error) {
         logger.error({
           source: 'bot',
           operation: 'deliver-market-summary',
+          traceId,
           error,
         }, 'Error handling market summary event in bot');
       }

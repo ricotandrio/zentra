@@ -47,6 +47,7 @@ export class MarketAnalysisSubscriber {
    * Handle market analysis trigger events
    */
   private async handleTrigger(event: WorkerMarketAnalysisTriggerEvent): Promise<void> {
+    const traceId = event.timestamp.toISOString();
     const job = new MarketAnalysisJob({
       eventBus: this.eventBus,
       channelId: this.channelId,
@@ -57,6 +58,7 @@ export class MarketAnalysisSubscriber {
     logger.info({
       source: 'worker',
       operation: 'market-analysis-trigger',
+      traceId,
       eventId: event.timestamp.toISOString(),
       metadata: { timestamp: event.timestamp },
     }, 'Received market analysis trigger event - worker should start analysis');
@@ -67,9 +69,11 @@ export class MarketAnalysisSubscriber {
    */
   private async handleComplete(event: MarketAnalysisCompleteEvent): Promise<void> {
     const { data } = event;
+    const traceId = event.timestamp.toISOString();
     logger.info({
       source: 'worker',
       operation: 'market-analysis-complete',
+      traceId,
       eventId: event.timestamp.toISOString(),
       metadata: {
         resultsCount: data.results.length,
@@ -91,6 +95,7 @@ export class MarketAnalysisSubscriber {
     logger.debug({
       source: 'worker',
       operation: 'market-analysis-complete',
+      traceId,
       metadata: { sentiments },
     }, 'Sentiment distribution');
   }
@@ -100,9 +105,11 @@ export class MarketAnalysisSubscriber {
    */
   private async handleError(event: MarketAnalysisErrorEvent): Promise<void> {
     const { data } = event;
+    const traceId = event.timestamp.toISOString();
     logger.error({
       source: 'worker',
       operation: 'market-analysis-error',
+      traceId,
       eventId: event.timestamp.toISOString(),
       error: data.error,
       metadata: { timestamp: data.timestamp },

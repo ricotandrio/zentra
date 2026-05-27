@@ -19,10 +19,12 @@ export const registerMarketAnalysisSubscriber = (
   eventBus.subscribe<MarketAnalysisCompleteEvent>(
     'market-analysis:complete',
     async (event) => {
+      const traceId = event.timestamp.toISOString();
       try {
         logger.info({
           source: 'bot',
           operation: 'deliver-market-analysis',
+          traceId,
           eventId: event.timestamp.toISOString(),
           metadata: { resultsCount: event.data.results.length },
         }, 'Bot received market analysis complete event');
@@ -58,6 +60,7 @@ export const registerMarketAnalysisSubscriber = (
           logger.error({
             source: 'bot',
             operation: 'deliver-market-analysis',
+            traceId,
             metadata: { channelId },
             error: 'Invalid channel: not a text channel',
           }, 'Invalid channel: not a text channel');
@@ -80,12 +83,14 @@ export const registerMarketAnalysisSubscriber = (
         logger.info({
           source: 'bot',
           operation: 'deliver-market-analysis',
+          traceId,
           metadata: { channelId, messageCount: chunks.length, embeds: embeds.length },
         }, 'Market analysis results delivered to Discord');
       } catch (error) {
         logger.error({
           source: 'bot',
           operation: 'deliver-market-analysis',
+          traceId,
           error,
         }, 'Error handling market analysis complete event in bot');
       }
@@ -96,10 +101,12 @@ export const registerMarketAnalysisSubscriber = (
   eventBus.subscribe<MarketAnalysisErrorEvent>(
     'market-analysis:error',
     async (event) => {
+      const traceId = event.timestamp.toISOString();
       try {
         logger.error({
           source: 'bot',
           operation: 'handle-market-analysis-error',
+          traceId,
           eventId: event.timestamp.toISOString(),
           error: event.data.error,
         }, 'Market analysis job failed - bot received error event');
@@ -108,6 +115,7 @@ export const registerMarketAnalysisSubscriber = (
         logger.error({
           source: 'bot',
           operation: 'handle-market-analysis-error',
+          traceId,
           error,
         }, 'Error handling market analysis error event in bot');
       }

@@ -19,6 +19,7 @@ Match logs by structured fields using curly braces:
 **Available Labels:**
 - `source` - Origin of the log: `api`, `bot`, `worker`, `system`
 - `operation` - Operation name: `ping`, `market-analysis`, `login`, etc.
+- `traceId` - Trace identifier for tracking related events
 - `requestId` - Request identifier
 - `eventId` - Event identifier
 
@@ -34,6 +35,19 @@ level="debug"
 ```
 
 **Supported Levels:** `trace`, `debug`, `info`, `warn`, `error`, `fatal`
+
+### Trace ID Filter
+
+Filter logs by trace ID to track related events across the system:
+
+```
+{traceId="2026-05-27T14:08:04.171Z"}
+```
+
+**Use Cases:**
+- Track a complete market analysis workflow from trigger to completion
+- Correlate logs from multiple services handling the same event
+- Debug multi-step operations by finding all related log entries
 
 ### Message Filter
 
@@ -53,6 +67,7 @@ Queries can be combined using pipe (`|`) syntax:
 {source="api"} | level="error"
 {source="bot", operation="login"} | message contains "failed"
 {source="api", operation="market-analysis"} | message contains "timeout"
+{traceId="2026-05-27T14:08:04.171Z"}
 ```
 
 ## API Usage
@@ -116,6 +131,9 @@ The web UI converts form inputs into LogQL queries automatically:
 |---|---|
 | Source: "api" | `{source="api"}` |
 | Source: "api" + Operation: "ping" | `{source="api", operation="ping"}` |
+| Trace ID: "trace-123" | `{traceId="trace-123"}` |
+| Request ID: "req-456" | `{requestId="req-456"}` |
+| Event ID: "evt-789" | `{eventId="evt-789"}` |
 | Level: "error" | `\| level="error"` |
 | Message: "timeout" | `\| message contains "timeout"` |
 | Multiple filters | Combined with `\|` |

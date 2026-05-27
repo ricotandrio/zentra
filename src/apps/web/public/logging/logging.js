@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function buildLogQLQuery() {
   const source = document.getElementById('filterSource').value;
   const operation = document.getElementById('filterOperation').value;
+  const traceId = document.getElementById('filterTraceId').value;
   const requestId = document.getElementById('filterRequestId').value;
   const eventId = document.getElementById('filterEventId').value;
   const level = document.getElementById('filterLevel').value;
@@ -27,6 +28,7 @@ function buildLogQLQuery() {
   const labels = [];
   if (source) labels.push(`source="${source}"`);
   if (operation) labels.push(`operation="${operation}"`);
+  if (traceId) labels.push(`traceId="${traceId}"`);
   if (requestId) labels.push(`requestId="${requestId}"`);
   if (eventId) labels.push(`eventId="${eventId}"`);
 
@@ -55,6 +57,7 @@ function buildLogQLQuery() {
 function clearFilters() {
   document.getElementById('filterSource').value = '';
   document.getElementById('filterOperation').value = '';
+  document.getElementById('filterTraceId').value = '';
   document.getElementById('filterRequestId').value = '';
   document.getElementById('filterEventId').value = '';
   document.getElementById('filterLevel').value = '';
@@ -146,6 +149,7 @@ function createLogEntry(log) {
   let meta = '';
   if (log.source) meta += `<span class="meta-tag">source: ${log.source}</span>`;
   if (log.operation) meta += `<span class="meta-tag">operation: ${log.operation}</span>`;
+  if (log.traceId) meta += `<span class="meta-tag">trace: ${log.traceId}</span>`;
   if (log.requestId) meta += `<span class="meta-tag">request: ${log.requestId}</span>`;
   if (log.eventId) meta += `<span class="meta-tag">event: ${log.eventId}</span>`;
 
@@ -173,6 +177,7 @@ function showLogDetail(log) {
     level: log.level,
     source: log.source,
     operation: log.operation,
+    traceId: log.traceId,
     requestId: log.requestId,
     eventId: log.eventId,
     message: log.message,
