@@ -1,5 +1,5 @@
 import { Utc } from './map';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 
 /**
  * Utility functions for cron schedule adjustments.
@@ -57,5 +57,5 @@ export const isoDateToLocaleString = (isoDate: string): string => {
  * @returns A UUID v4 string
  */
 export const generateTraceId = (): string => {
-  return uuidv4();
+  return randomUUID();
 };
