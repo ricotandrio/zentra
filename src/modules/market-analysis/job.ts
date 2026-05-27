@@ -10,7 +10,7 @@ interface MarketAnalysisJobConfig {
   channelId: string;
   eventBus: IEventBus;
   tickerManagementModule: TickerManagementModule;
-  traceId: string;
+  traceId?: string;
 }
 
 export class MarketAnalysisJob implements SchedulerJob {
@@ -22,11 +22,13 @@ export class MarketAnalysisJob implements SchedulerJob {
   async execute(): Promise<void> {
     const { traceId, tickerManagementModule } = this.config;
 
+    const traceIdForThisRun = traceId || `market-analysis-${Date.now()}`;
+
     try {
       logger.info({
         source: 'worker',
         operation: 'market-analysis-job',
-        traceId,
+        traceId: traceIdForThisRun,
       }, 'Starting market analysis job');
 
       const tickers = await tickerManagementModule.getTickersUseCase.execute();
@@ -35,16 +37,16 @@ export class MarketAnalysisJob implements SchedulerJob {
         logger.info({
           source: 'worker',
           operation: 'market-analysis-job',
-          traceId,
+          traceId: traceIdForThisRun,
         }, 'No tickers to analyze');
         return;
       }
 
       // Analyze tickers and publish event
-      await this.analyzeTickersAndPublish(tickers, traceId);
+      await this.analyzeTickersAndPublish(tickers, traceIdForThisRun);
 
       // Fetch market summary and publish event
-      await this.publishMarketSummary(traceId);
+      await this.publishMarketSummary(traceIdForThisRun);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
@@ -52,7 +54,7 @@ export class MarketAnalysisJob implements SchedulerJob {
         source: 'worker',
         operation: 'market-analysis-job',
         error,
-        traceId,
+        traceId: traceIdForThisRun,
       }, 'Error executing market analysis job');
 
       // Publish error event with same traceId
@@ -60,7 +62,7 @@ export class MarketAnalysisJob implements SchedulerJob {
         type: 'market-analysis:error',
         source: 'worker',
         timestamp: new Date(),
-        traceId,
+        traceId: traceIdForThisRun,
         data: {
           error: errorMessage,
           timestamp: new Date().toISOString(),
