@@ -1,4 +1,6 @@
 import { ApplicationEvent, EventHandler } from './event.types';
+import { logger } from '../logger/logger';
+import { generateShortTraceId } from '../utils';
 
 /**
  * In-memory Event Bus
@@ -56,6 +58,21 @@ export class InMemoryEventBus implements IEventBus {
   }
 
   async publish(event: ApplicationEvent): Promise<void> {
+    // Ensure event has a traceId
+    if (!event.traceId) {
+      event.traceId = generateShortTraceId();
+    }
+
+    // Log event publication
+    logger.info({
+      source: event.source,
+      operation: `publish-${event.type}`,
+      traceId: event.traceId,
+      event: {
+        type: event.type,
+      },
+    }, `Event published: ${event.type}`);
+
     const handlers = this.subscribers.get(event.type) || [];
 
     // Execute all handlers concurrently but don't let one failure stop others
@@ -66,10 +83,12 @@ export class InMemoryEventBus implements IEventBus {
     // Log failures if any
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
-        console.error(
-          `Event handler ${index} for event type ${event.type} failed:`,
-          result.reason
-        );
+        logger.error({
+          source: event.source,
+          operation: `handle-${event.type}`,
+          traceId: event.traceId,
+          error: result.reason,
+        }, `Event handler ${index} failed for ${event.type}`);
       }
     });
   }

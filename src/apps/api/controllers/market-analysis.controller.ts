@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { logger } from '@/shared/logger';
 import { IEventBus, WorkerMarketAnalysisTriggerEvent } from '@/shared/event-bus';
+import { generateShortTraceId } from '@/shared/utils';
 
 export const triggerWorker = (
   eventBus?: IEventBus
@@ -26,10 +27,12 @@ export const triggerWorker = (
       }
 
       // Publish worker trigger event
+      const traceId = generateShortTraceId();
       const event: WorkerMarketAnalysisTriggerEvent = {
         type: 'worker:market-analysis:trigger',
         source: 'api',
         timestamp: new Date(),
+        traceId,
       };
 
       await eventBus.publish(event);
@@ -37,6 +40,7 @@ export const triggerWorker = (
       logger.info({
         source: 'api',
         operation: 'trigger-market-analysis-worker',
+        traceId,
         response: { statusCode: 200 },
       }, 'Market analysis worker trigger event published');
       res.status(200).json({

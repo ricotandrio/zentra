@@ -8,6 +8,7 @@
 export interface DomainEvent {
   type: string;
   timestamp: Date;
+  traceId?: string;
   source: 'api' | 'worker' | 'bot';
 }
 

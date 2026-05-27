@@ -38,11 +38,17 @@ level="debug"
 
 ### Trace ID Filter
 
-Filter logs by trace ID to track related events across the system:
+Filter logs by trace ID to track related events across the system. Trace IDs are cryptographically secure UUIDs (12 characters):
 
 ```
-{traceId="2026-05-27T14:08:04.171Z"}
+{traceId="a1b2c3d4e5f6"}
 ```
+
+**Characteristics:**
+- Cryptographically secure UUID v4 (first 12 characters)
+- Auto-generated when events are published if not provided
+- Unique per transaction/workflow
+- Enables distributed tracing across APIs, workers, and bots
 
 **Use Cases:**
 - Track a complete market analysis workflow from trigger to completion
@@ -67,7 +73,7 @@ Queries can be combined using pipe (`|`) syntax:
 {source="api"} | level="error"
 {source="bot", operation="login"} | message contains "failed"
 {source="api", operation="market-analysis"} | message contains "timeout"
-{traceId="2026-05-27T14:08:04.171Z"}
+{traceId="a1b2c3d4e5f6"}
 ```
 
 ## API Usage

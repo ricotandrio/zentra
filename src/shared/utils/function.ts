@@ -1,4 +1,5 @@
 import { Utc } from './map';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Utility functions for cron schedule adjustments.
@@ -49,4 +50,20 @@ export const isoDateToLocaleString = (isoDate: string): string => {
     minute: '2-digit',
     second: '2-digit',
   });
+};
+
+/**
+ * Generate a cryptographically secure UUID v4
+ * @returns A UUID v4 string
+ */
+export const generateTraceId = (): string => {
+  return uuidv4();
+};
+
+/**
+ * Generate a short crypto UUID (first 12 characters of UUID v4)
+ * @returns A short UUID string (12 characters)
+ */
+export const generateShortTraceId = (): string => {
+  return uuidv4().substring(0, 12);
 };

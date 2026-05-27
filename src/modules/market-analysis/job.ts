@@ -5,6 +5,7 @@ import { MarketSummaryUseCase } from './application/usecases/market-summary.usec
 import { SchedulerJob } from '@/shared/scheduler/scheduler.types';
 import { convertCronScheduleHour, Utc } from '@/shared/utils';
 import { logger } from '@/shared/logger';
+import { generateShortTraceId } from '@/shared/utils';
 
 interface MarketAnalysisJobConfig {
   channelId: string;
@@ -52,10 +53,12 @@ export class MarketAnalysisJob implements SchedulerJob {
       }, 'Error executing market analysis job');
 
       // Publish error event
+      const traceId = generateShortTraceId();
       const errorEvent: MarketAnalysisErrorEvent = {
         type: 'market-analysis:error',
         source: 'worker',
         timestamp: new Date(),
+        traceId,
         data: {
           error: errorMessage,
           timestamp: new Date().toISOString(),
@@ -103,10 +106,12 @@ export class MarketAnalysisJob implements SchedulerJob {
     }));
 
     // Build and publish event
+    const traceId = generateShortTraceId();
     const event: MarketAnalysisCompleteEvent = {
       type: 'market-analysis:complete',
       source: 'worker',
       timestamp: new Date(),
+      traceId,
       data: {
         channelId,
         timestamp: new Date().toISOString(),
@@ -117,6 +122,7 @@ export class MarketAnalysisJob implements SchedulerJob {
     logger.info({
       source: 'worker',
       operation: 'publish-market-analysis-complete',
+      traceId,
       metadata: { resultsCount: results.length },
     }, `Publishing market analysis complete event with ${results.length} results`);
 
@@ -144,10 +150,12 @@ export class MarketAnalysisJob implements SchedulerJob {
       const marketSummary = await marketSummaryUseCase.execute();
 
       // Publish market summary event
+      const traceId = generateShortTraceId();
       const marketSummaryEvent: MarketSummaryCompleteEvent = {
         type: 'market-summary:complete',
         source: 'worker',
         timestamp: new Date(),
+        traceId,
         data: {
           channelId,
           timestamp: new Date().toISOString(),
@@ -158,6 +166,7 @@ export class MarketAnalysisJob implements SchedulerJob {
       logger.info({
         source: 'worker',
         operation: 'publish-market-summary',
+        traceId,
         metadata: { totalTickers: marketSummary.totalTickers },
       }, `Publishing market summary event with ${marketSummary.totalTickers} tickers`);
       await eventBus.publish(marketSummaryEvent);

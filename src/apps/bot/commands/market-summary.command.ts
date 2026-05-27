@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { IEventBus } from '@/shared/event-bus';
 import { TickerManagementModule } from '@/modules/ticker-management';
+import { generateShortTraceId } from '@/shared/utils';
 
 export const data = new SlashCommandBuilder()
   .setName('market-summary')
@@ -43,10 +44,12 @@ export async function execute(
     }
 
     // Emit market analysis trigger event
+    const traceId = generateShortTraceId();
     eventBus.publish({
       type: 'worker:market-analysis:trigger',
       source: 'bot',
       timestamp: new Date(),
+      traceId,
     });
 
     await interaction.editReply({
