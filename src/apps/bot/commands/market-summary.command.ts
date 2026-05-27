@@ -43,7 +43,7 @@ export async function execute(
       tickersToAnalyze = tickers.map((t) => t.symbol);
     }
 
-    // Emit market analysis trigger event
+    // Emit market analysis trigger event with traceId generated at entry point
     const traceId = generateTraceId();
     eventBus.publish({
       type: 'worker:market-analysis:trigger',

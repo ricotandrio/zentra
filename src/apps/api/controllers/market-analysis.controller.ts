@@ -26,7 +26,7 @@ export const triggerWorker = (
         return;
       }
 
-      // Publish worker trigger event
+      // Publish worker trigger event with traceId generated at entry point
       const traceId = generateTraceId();
       const event: WorkerMarketAnalysisTriggerEvent = {
         type: 'worker:market-analysis:trigger',

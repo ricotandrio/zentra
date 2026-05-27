@@ -47,19 +47,18 @@ export class MarketAnalysisSubscriber {
    * Handle market analysis trigger events
    */
   private async handleTrigger(event: WorkerMarketAnalysisTriggerEvent): Promise<void> {
-    const traceId = event.traceId;
     const job = new MarketAnalysisJob({
       eventBus: this.eventBus,
       channelId: this.channelId,
-      traceId,
       tickerManagementModule: this.tickerManagementModule,
+      traceId: event.traceId,
     });
     await job.execute();
 
     logger.info({
       source: 'worker',
       operation: 'market-analysis-trigger',
-      traceId,
+      traceId: event.traceId,
       eventId: event.timestamp.toISOString(),
       metadata: { timestamp: event.timestamp },
     }, 'Received market analysis trigger event - worker should start analysis');
@@ -74,7 +73,7 @@ export class MarketAnalysisSubscriber {
     logger.info({
       source: 'worker',
       operation: 'market-analysis-complete',
-      traceId,
+      traceId: event.traceId,
       eventId: event.timestamp.toISOString(),
       metadata: {
         resultsCount: data.results.length,

@@ -1,3 +1,5 @@
+import { parseJson, formatJson, getCurrentTime, downloadFile } from '../common/base.js';
+
 const responseLogEl = document.getElementById('responseLog');
 
 /**

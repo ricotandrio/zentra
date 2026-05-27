@@ -128,6 +128,7 @@ export class LogReader {
             level: parsed.level || 'info',
             source: parsed.source,
             operation: parsed.operation,
+            traceId: parsed.traceId,
             requestId: parsed.requestId,
             eventId: parsed.eventId,
             message: parsed.msg || '',
@@ -156,6 +157,7 @@ export class LogReader {
       for (const [key, value] of Object.entries(filter.labelFilters)) {
         if (key === 'source' && log.source !== value) return false;
         if (key === 'operation' && log.operation !== value) return false;
+        if (key === 'traceId' && log.traceId !== value) return false;
         if (key === 'requestId' && log.requestId !== value) return false;
         if (key === 'eventId' && log.eventId !== value) return false;
       }

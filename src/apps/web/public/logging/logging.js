@@ -2,6 +2,14 @@ const API_BASE = 'http://localhost:3000';
 let currentQuery = '';
 let currentLimit = 50;
 let currentOffset = 0;
+const LOG_LEVELS = {
+  10: 'trace',
+  20: 'debug',
+  30: 'info',
+  40: 'warn',
+  50: 'error',
+  60: 'fatal',
+};
 
 // Initialize date inputs with today
 document.addEventListener('DOMContentLoaded', () => {
@@ -300,7 +308,7 @@ function displayStatistics(stats) {
       .forEach(([level, count]) => {
         levelCard.innerHTML += `
           <div class="stat-item">
-            <span>${level.toUpperCase()}</span>
+            <span>${LOG_LEVELS[parseInt(level)]?.toUpperCase() || level.toUpperCase()}</span>
             <span>${count}</span>
           </div>
         `;

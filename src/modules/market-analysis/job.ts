@@ -5,13 +5,12 @@ import { MarketSummaryUseCase } from './application/usecases/market-summary.usec
 import { SchedulerJob } from '@/shared/scheduler/scheduler.types';
 import { convertCronScheduleHour, Utc } from '@/shared/utils';
 import { logger } from '@/shared/logger';
-import { generateTraceId } from '@/shared/utils';
 
 interface MarketAnalysisJobConfig {
   channelId: string;
   eventBus: IEventBus;
-  traceId: string;
   tickerManagementModule: TickerManagementModule;
+  traceId: string;
 }
 
 export class MarketAnalysisJob implements SchedulerJob {
@@ -27,6 +26,7 @@ export class MarketAnalysisJob implements SchedulerJob {
       logger.info({
         source: 'worker',
         operation: 'market-analysis-job',
+        traceId,
       }, 'Starting market analysis job');
 
       const tickers = await tickerManagementModule.getTickersUseCase.execute();
@@ -41,10 +41,10 @@ export class MarketAnalysisJob implements SchedulerJob {
       }
 
       // Analyze tickers and publish event
-      await this.analyzeTickersAndPublish(tickers);
+      await this.analyzeTickersAndPublish(tickers, traceId);
 
       // Fetch market summary and publish event
-      await this.publishMarketSummary();
+      await this.publishMarketSummary(traceId);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
@@ -52,11 +52,10 @@ export class MarketAnalysisJob implements SchedulerJob {
         source: 'worker',
         operation: 'market-analysis-job',
         error,
-        traceId: this.config.traceId,
+        traceId,
       }, 'Error executing market analysis job');
 
-      // Publish error event
-      const traceId = generateTraceId();
+      // Publish error event with same traceId
       const errorEvent: MarketAnalysisErrorEvent = {
         type: 'market-analysis:error',
         source: 'worker',
@@ -76,7 +75,7 @@ export class MarketAnalysisJob implements SchedulerJob {
   /**
    * Analyze tickers and publish market analysis complete event
    */
-  private async analyzeTickersAndPublish(tickers: any[]): Promise<void> {
+  private async analyzeTickersAndPublish(tickers: any[], traceId: string): Promise<void> {
     const { channelId, eventBus } = this.config;
 
     const analyzeUseCase = new AnalyzeTickersUseCase();
@@ -109,7 +108,7 @@ export class MarketAnalysisJob implements SchedulerJob {
     }));
 
     // Build and publish event
-    const traceId = generateTraceId();
+
     const event: MarketAnalysisCompleteEvent = {
       type: 'market-analysis:complete',
       source: 'worker',
@@ -141,7 +140,7 @@ export class MarketAnalysisJob implements SchedulerJob {
   /**
    * Fetch market summary and publish market summary event
    */
-  private async publishMarketSummary(): Promise<void> {
+  private async publishMarketSummary(traceId: string): Promise<void> {
     const { channelId, eventBus } = this.config;
 
     try {
@@ -153,7 +152,7 @@ export class MarketAnalysisJob implements SchedulerJob {
       const marketSummary = await marketSummaryUseCase.execute();
 
       // Publish market summary event
-      const traceId = generateTraceId();
+
       const marketSummaryEvent: MarketSummaryCompleteEvent = {
         type: 'market-summary:complete',
         source: 'worker',
