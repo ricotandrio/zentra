@@ -1,6 +1,5 @@
 import { ApplicationEvent, EventHandler } from './event.types';
 import { logger } from '../logger/logger';
-import { generateShortTraceId } from '../utils';
 
 /**
  * In-memory Event Bus
@@ -58,11 +57,6 @@ export class InMemoryEventBus implements IEventBus {
   }
 
   async publish(event: ApplicationEvent): Promise<void> {
-    // Ensure event has a traceId
-    if (!event.traceId) {
-      event.traceId = generateShortTraceId();
-    }
-
     // Log event publication
     logger.info({
       source: event.source,

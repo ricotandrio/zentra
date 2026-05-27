@@ -3,6 +3,7 @@ import { MarketAnalysisJob } from './job';
 import { IEventBus } from '@/shared/event-bus';
 import { TickerManagementModule } from '@/modules/ticker-management';
 import { logger } from '@/shared/logger';
+import { generateTraceId } from '@/shared/utils';
 
 /** 
  * Scheduler configuration interface 
@@ -40,7 +41,8 @@ export class MarketAnalysisScheduler {
 
     this.task = cron.schedule(schedule, async () => {
       try {
-        const job = new MarketAnalysisJob(this.config);
+        const traceId = generateTraceId();
+        const job = new MarketAnalysisJob({ ...this.config, traceId });
         await job.execute();
       } catch (error) {
         logger.error({

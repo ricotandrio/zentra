@@ -5,11 +5,12 @@ import { MarketSummaryUseCase } from './application/usecases/market-summary.usec
 import { SchedulerJob } from '@/shared/scheduler/scheduler.types';
 import { convertCronScheduleHour, Utc } from '@/shared/utils';
 import { logger } from '@/shared/logger';
-import { generateShortTraceId } from '@/shared/utils';
+import { generateTraceId } from '@/shared/utils';
 
 interface MarketAnalysisJobConfig {
   channelId: string;
   eventBus: IEventBus;
+  traceId: string;
   tickerManagementModule: TickerManagementModule;
 }
 
@@ -20,7 +21,7 @@ export class MarketAnalysisJob implements SchedulerJob {
   constructor(private config: MarketAnalysisJobConfig) {}
 
   async execute(): Promise<void> {
-    const { tickerManagementModule } = this.config;
+    const { traceId, tickerManagementModule } = this.config;
 
     try {
       logger.info({
@@ -34,6 +35,7 @@ export class MarketAnalysisJob implements SchedulerJob {
         logger.info({
           source: 'worker',
           operation: 'market-analysis-job',
+          traceId,
         }, 'No tickers to analyze');
         return;
       }
@@ -50,10 +52,11 @@ export class MarketAnalysisJob implements SchedulerJob {
         source: 'worker',
         operation: 'market-analysis-job',
         error,
+        traceId: this.config.traceId,
       }, 'Error executing market analysis job');
 
       // Publish error event
-      const traceId = generateShortTraceId();
+      const traceId = generateTraceId();
       const errorEvent: MarketAnalysisErrorEvent = {
         type: 'market-analysis:error',
         source: 'worker',
@@ -106,7 +109,7 @@ export class MarketAnalysisJob implements SchedulerJob {
     }));
 
     // Build and publish event
-    const traceId = generateShortTraceId();
+    const traceId = generateTraceId();
     const event: MarketAnalysisCompleteEvent = {
       type: 'market-analysis:complete',
       source: 'worker',
@@ -150,7 +153,7 @@ export class MarketAnalysisJob implements SchedulerJob {
       const marketSummary = await marketSummaryUseCase.execute();
 
       // Publish market summary event
-      const traceId = generateShortTraceId();
+      const traceId = generateTraceId();
       const marketSummaryEvent: MarketSummaryCompleteEvent = {
         type: 'market-summary:complete',
         source: 'worker',

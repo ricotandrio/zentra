@@ -19,6 +19,7 @@ export const registerMarketSummarySubscriber = (
   eventBus.subscribe<{
     type: 'market-summary:complete';
     source: 'worker';
+    traceId: string;
     timestamp: Date;
     data: {
       channelId: string;
@@ -28,7 +29,7 @@ export const registerMarketSummarySubscriber = (
   }>(
     'market-summary:complete',
     async (event) => {
-      const traceId = event.timestamp.toISOString();
+      const traceId = event.traceId;
       try {
         logger.info({
           source: 'bot',

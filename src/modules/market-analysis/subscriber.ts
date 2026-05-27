@@ -47,10 +47,11 @@ export class MarketAnalysisSubscriber {
    * Handle market analysis trigger events
    */
   private async handleTrigger(event: WorkerMarketAnalysisTriggerEvent): Promise<void> {
-    const traceId = event.timestamp.toISOString();
+    const traceId = event.traceId;
     const job = new MarketAnalysisJob({
       eventBus: this.eventBus,
       channelId: this.channelId,
+      traceId,
       tickerManagementModule: this.tickerManagementModule,
     });
     await job.execute();
@@ -69,7 +70,7 @@ export class MarketAnalysisSubscriber {
    */
   private async handleComplete(event: MarketAnalysisCompleteEvent): Promise<void> {
     const { data } = event;
-    const traceId = event.timestamp.toISOString();
+    const traceId = event.traceId;
     logger.info({
       source: 'worker',
       operation: 'market-analysis-complete',
@@ -105,7 +106,7 @@ export class MarketAnalysisSubscriber {
    */
   private async handleError(event: MarketAnalysisErrorEvent): Promise<void> {
     const { data } = event;
-    const traceId = event.timestamp.toISOString();
+    const traceId = event.traceId;
     logger.error({
       source: 'worker',
       operation: 'market-analysis-error',

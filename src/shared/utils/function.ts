@@ -59,11 +59,3 @@ export const isoDateToLocaleString = (isoDate: string): string => {
 export const generateTraceId = (): string => {
   return uuidv4();
 };
-
-/**
- * Generate a short crypto UUID (first 12 characters of UUID v4)
- * @returns A short UUID string (12 characters)
- */
-export const generateShortTraceId = (): string => {
-  return uuidv4().substring(0, 12);
-};
