@@ -28,7 +28,7 @@ export interface LogContext {
 const getLogPath = (): string => {
   const date = new Date();
   const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
-  return path.join(process.cwd(), 'data', 'log', dateStr, 'app.log');
+  return path.join(process.cwd(), 'data', 'log', dateStr!, 'app.log');
 };
 
 export const logger: Logger = pino(

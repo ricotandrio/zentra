@@ -29,10 +29,12 @@ export const registerMarketSummarySubscriber = (
     'market-summary:complete',
     async (event) => {
       try {
-        logger.info(
-          { totalTickers: event.data.summary.totalTickers },
-          'Bot received market summary event'
-        );
+        logger.info({
+          source: 'bot',
+          operation: 'deliver-market-summary',
+          eventId: event.timestamp.toISOString(),
+          metadata: { totalTickers: event.data.summary.totalTickers },
+        }, 'Bot received market summary event');
 
         // Use the use case to format results
         const useCase = new MarketSummaryDiscordResultUseCase();
@@ -42,7 +44,12 @@ export const registerMarketSummarySubscriber = (
         const channel = await discordClient.channels.fetch(event.data.channelId);
 
         if (!channel?.isTextBased()) {
-          logger.error({ channelId: event.data.channelId }, 'Invalid channel: not a text channel');
+          logger.error({
+            source: 'bot',
+            operation: 'deliver-market-summary',
+            metadata: { channelId: event.data.channelId },
+            error: 'Invalid channel: not a text channel',
+          }, 'Invalid channel: not a text channel');
           return;
         }
 
@@ -51,15 +58,23 @@ export const registerMarketSummarySubscriber = (
           await channel.send({ embeds });
         }
 
-        logger.info(
-          { channelId: event.data.channelId, title },
-          'Market summary delivered to Discord'
-        );
+        logger.info({
+          source: 'bot',
+          operation: 'deliver-market-summary',
+          metadata: { channelId: event.data.channelId, title },
+        }, 'Market summary delivered to Discord');
       } catch (error) {
-        logger.error(error, 'Error handling market summary event in bot');
+        logger.error({
+          source: 'bot',
+          operation: 'deliver-market-summary',
+          error,
+        }, 'Error handling market summary event in bot');
       }
     }
   );
 
-  logger.info('Bot market summary event subscriber registered');
+  logger.info({
+    source: 'bot',
+    operation: 'register-subscribers',
+  }, 'Bot market summary event subscriber registered');
 };

@@ -42,7 +42,12 @@ export const deployBot = async (
       .values(botCommands)
       .filter(cmd => {
         if (!cmd || !cmd.data) {
-          logger.error('Invalid command detected:', cmd);
+          logger.error({
+            source: 'bot',
+            operation: 'deploy-commands',
+            error: 'Invalid command detected',
+            metadata: { cmd },
+          }, 'Invalid command detected');
           return false;
         }
         return true;
@@ -50,7 +55,10 @@ export const deployBot = async (
       .map(cmd => cmd.data.toJSON());
 
     if (body.length === 0) {
-      logger.warn('No bot commands to deploy');
+      logger.warn({
+        source: 'bot',
+        operation: 'deploy-commands',
+      }, 'No bot commands to deploy');
       return;
     }
 
@@ -59,11 +67,17 @@ export const deployBot = async (
       { body }
     );
 
-    logger.info(
-      `Slash commands registered successfully (${body.length} commands)`
-    );
+    logger.info({
+      source: 'bot',
+      operation: 'deploy-commands',
+      metadata: { commandCount: body.length },
+    }, `Slash commands registered successfully (${body.length} commands)`);
   } catch (error) {
-    logger.error(error, 'Error deploying bot commands');
+    logger.error({
+      source: 'bot',
+      operation: 'deploy-commands',
+      error,
+    }, 'Error deploying bot commands');
   }
 };
 
@@ -98,7 +112,12 @@ const registerHandlers = (
     try {
       await command.execute(interaction, eventBus, tickerManagementModule);
     } catch (error) {
-      logger.error(error, `Error executing command: ${interaction.commandName}`);
+      logger.error({
+        source: 'bot',
+        operation: 'execute-command',
+        metadata: { commandName: interaction.commandName },
+        error,
+      }, `Error executing command: ${interaction.commandName}`);
       const errorMessage = '❌ An unexpected error occurred while executing this command.';
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({ content: errorMessage, ephemeral: true });
@@ -109,11 +128,19 @@ const registerHandlers = (
   });
 
   client.once('clientReady', () => {
-    logger.info(`Bot logged in as ${client.user?.tag}`);
+    logger.info({
+      source: 'bot',
+      operation: 'login',
+      metadata: { tag: client.user?.tag },
+    }, `Bot logged in as ${client.user?.tag}`);
   });
 
   client.on('error', (error) => {
-    logger.error(error, 'Discord client error');
+    logger.error({
+      source: 'bot',
+      operation: 'client-error',
+      error,
+    }, 'Discord client error');
   });
 };
 
@@ -147,7 +174,10 @@ export const startBot = async (
   }
 
   await client.login(botToken);
-  logger.info('Discord bot started');
+  logger.info({
+    source: 'bot',
+    operation: 'startup',
+  }, 'Discord bot started');
 
   return client;
 };

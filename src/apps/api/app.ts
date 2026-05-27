@@ -27,6 +27,10 @@ export const startExpressApp = (
   const app = createExpressApp(discordClient, eventBus);
 
   app.listen(port, () => {
-    logger.info(`API server running on http://localhost:${port}`);
+    logger.info({ 
+      source: 'api',
+      operation: 'server-startup',
+      metadata: { port },
+    }, `API server running on http://localhost:${port}`);
   });
 };

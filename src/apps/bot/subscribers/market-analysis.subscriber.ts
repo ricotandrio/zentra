@@ -20,10 +20,12 @@ export const registerMarketAnalysisSubscriber = (
     'market-analysis:complete',
     async (event) => {
       try {
-        logger.info(
-          { resultsCount: event.data.results.length },
-          'Bot received market analysis complete event'
-        );
+        logger.info({
+          source: 'bot',
+          operation: 'deliver-market-analysis',
+          eventId: event.timestamp.toISOString(),
+          metadata: { resultsCount: event.data.results.length },
+        }, 'Bot received market analysis complete event');
 
         // Parse sentiment strings back to objects and convert to use case payload format
         const results = event.data.results.map((r) => {
@@ -53,7 +55,12 @@ export const registerMarketAnalysisSubscriber = (
         const channel = await discordClient.channels.fetch(channelId);
 
         if (!channel?.isTextBased()) {
-          logger.error({ channelId }, 'Invalid channel: not a text channel');
+          logger.error({
+            source: 'bot',
+            operation: 'deliver-market-analysis',
+            metadata: { channelId },
+            error: 'Invalid channel: not a text channel',
+          }, 'Invalid channel: not a text channel');
           return;
         }
 
@@ -70,12 +77,17 @@ export const registerMarketAnalysisSubscriber = (
           }
         }
 
-        logger.info(
-          { channelId, messageCount: chunks.length, embeds: embeds.length },
-          'Market analysis results delivered to Discord'
-        );
+        logger.info({
+          source: 'bot',
+          operation: 'deliver-market-analysis',
+          metadata: { channelId, messageCount: chunks.length, embeds: embeds.length },
+        }, 'Market analysis results delivered to Discord');
       } catch (error) {
-        logger.error(error, 'Error handling market analysis complete event in bot');
+        logger.error({
+          source: 'bot',
+          operation: 'deliver-market-analysis',
+          error,
+        }, 'Error handling market analysis complete event in bot');
       }
     }
   );
@@ -85,16 +97,25 @@ export const registerMarketAnalysisSubscriber = (
     'market-analysis:error',
     async (event) => {
       try {
-        logger.error(
-          { error: event.data.error },
-          'Market analysis job failed - bot received error event'
-        );
+        logger.error({
+          source: 'bot',
+          operation: 'handle-market-analysis-error',
+          eventId: event.timestamp.toISOString(),
+          error: event.data.error,
+        }, 'Market analysis job failed - bot received error event');
         // Optional: send error notification to admin channel
       } catch (error) {
-        logger.error(error, 'Error handling market analysis error event in bot');
+        logger.error({
+          source: 'bot',
+          operation: 'handle-market-analysis-error',
+          error,
+        }, 'Error handling market analysis error event in bot');
       }
     }
   );
 
-  logger.info('Bot market analysis event subscribers registered');
+  logger.info({
+    source: 'bot',
+    operation: 'register-subscribers',
+  }, 'Bot market analysis event subscribers registered');
 };

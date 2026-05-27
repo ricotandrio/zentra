@@ -14,7 +14,10 @@ export interface TickerManagementModule {
 
 export function createTickerManagementModule(): TickerManagementModule {
   const db = initDatabase();
-  logger.info('Database initialized');
+  logger.info({
+    source: 'system',
+    operation: 'database-init',
+  }, 'Database initialized');
 
   const repository = new SqliteTickerRepository(db);
 

@@ -32,14 +32,22 @@ export class MarketAnalysisScheduler {
   start(): void {
     const { schedule = '0 18 * * *' } = this.config;
 
-    logger.info(`Starting market analysis scheduler at ${schedule}`);
+    logger.info({
+      source: 'system',
+      operation: 'market-analysis-scheduler-start',
+      metadata: { schedule },
+    }, `Starting market analysis scheduler at ${schedule}`);
 
     this.task = cron.schedule(schedule, async () => {
       try {
         const job = new MarketAnalysisJob(this.config);
         await job.execute();
       } catch (error) {
-        logger.error(error, 'Scheduled market analysis job failed');
+        logger.error({
+          source: 'system',
+          operation: 'market-analysis-scheduler-job',
+          error,
+        }, 'Scheduled market analysis job failed');
       }
     });
   }
@@ -47,7 +55,10 @@ export class MarketAnalysisScheduler {
   stop(): void {
     if (this.task) {
       this.task.stop();
-      logger.info('Market analysis scheduler stopped');
+      logger.info({
+        source: 'system',
+        operation: 'market-analysis-scheduler-stop',
+      }, 'Market analysis scheduler stopped');
     }
   }
 }
