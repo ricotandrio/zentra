@@ -40,7 +40,6 @@ Infrastructure (External APIs, DB, Adapters)
 ❌ **Circular dependencies** — If A imports B and B imports A, you have a design problem.  
 ❌ **Infrastructure in Application** — Application must use ports (interfaces), not implementations.  
 ❌ **Business logic in Handlers** — Move it to a use case.  
-❌ **Direct SDK calls** — Always wrap in adapters.  
 ❌ **Domain depending on Framework** — Domain is pure logic.
 
 ## When This Matters
@@ -54,4 +53,3 @@ Infrastructure (External APIs, DB, Adapters)
 
 - See [reference.md](reference.md) for complete layer invariants and detailed rules
 - See [anti-patterns.md](anti-patterns.md) for common violations and how to fix them
-- See [diagrams/](diagrams/) for ASCII architecture diagrams

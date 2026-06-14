@@ -165,10 +165,3 @@ expect(mockEventBus.publish).toHaveBeenCalledWith(
   })
 );
 ```
-
----
-
-## See Also
-
-See [reference.md](reference.md) for complete event type specifications.  
-See [examples.md](examples.md) for publishing/subscribing patterns.
