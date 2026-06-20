@@ -198,26 +198,23 @@ const issueResult = await gitHubAdapter.createIssue();
 - [ ] No imports from `config/`
 - [ ] No HTTP, database, or SDK calls
 - [ ] Testable without mocks
-- [ ] Pure logic
 
 ### Before committing application code:
-- [ ] Imports only domain and application
-- [ ] Never imports infrastructure implementations (only contracts)
-- [ ] Never imports interfaces
-- [ ] No HTTP, database, or SDK calls
-- [ ] Business logic, not framework details
-- [ ] Dependencies are injected
+- [ ] Depends only on `domain/`, `shared/`, and `application/`
+- [ ] No concrete infrastructure imports (only contracts/ports)
+- [ ] No imports from `interfaces/`
+- [ ] DTOs defined, not entities
+- [ ] Use cases use ports, not implementations
+- [ ] Events are published, not directly called
 
 ### Before committing infrastructure code:
-- [ ] Implements application contracts
-- [ ] Can import infrastructure and domain
-- [ ] Cannot import interfaces
-- [ ] Handles external service details
-- [ ] Translates external errors to domain errors
+- [ ] Implements a port/contract from `application/`
+- [ ] No imports from `interfaces/`
+- [ ] Can use external packages freely
+- [ ] Handles error mapping from external API to domain errors
 
-### Before committing interfaces code:
-- [ ] Orchestrates and wires up all layers
-- [ ] Routes, commands, handlers live here
-- [ ] Can import anything
-- [ ] Delegates to use cases
-- [ ] Framework-specific code OK here
+### Before committing interface code:
+- [ ] Receives all dependencies (don't construct them)
+- [ ] Calls use cases, not domain or infrastructure directly
+- [ ] Translates requests to DTOs
+- [ ] Translates responses to domain objects or events
