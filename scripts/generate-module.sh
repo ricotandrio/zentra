@@ -43,9 +43,9 @@ mkdir -p "$MODULE_PATH/application/dtos"
 mkdir -p "$MODULE_PATH/application/use-cases"
 mkdir -p "$MODULE_PATH/infrastructure/adapters"
 mkdir -p "$MODULE_PATH/infrastructure/repositories"
-mkdir -p "$MODULE_PATH/__tests__/domain"
-mkdir -p "$MODULE_PATH/__tests__/application"
-mkdir -p "$MODULE_PATH/__tests__/infrastructure"
+mkdir -p "tests/unit/modules/$MODULE_NAME/domain"
+mkdir -p "tests/unit/modules/$MODULE_NAME/application"
+mkdir -p "tests/unit/modules/$MODULE_NAME/infrastructure"
 
 echo -e "${GREEN}✓ Directory structure created${NC}"
 
@@ -247,8 +247,8 @@ EOF
 echo -e "${GREEN}✓ Public exports created${NC}"
 
 # Generate domain test
-cat > "$MODULE_PATH/__tests__/domain/sample.entity.spec.ts" << 'EOF'
-import { Entity } from '../../domain/entities/sample.entity';
+cat > "tests/unit/modules/$MODULE_NAME/domain/sample.entity.spec.ts" << 'EOF'
+import { Entity } from '@/modules/$MODULE_NAME/domain/entities/sample.entity';
 
 describe('Entity', () => {
   it('creates entity with id', () => {
@@ -267,8 +267,8 @@ EOF
 echo -e "${GREEN}✓ Domain tests created${NC}"
 
 # Generate application test
-cat > "$MODULE_PATH/__tests__/application/sample.usecase.spec.ts" << 'EOF'
-import { SampleUseCase } from '../../application/use-cases/sample.usecase';
+cat > "tests/unit/modules/$MODULE_NAME/application/sample.usecase.spec.ts" << 'EOF'
+import { SampleUseCase } from '@/modules/$MODULE_NAME/application/use-cases/sample.usecase';
 
 describe('SampleUseCase', () => {
   let useCase: SampleUseCase;
@@ -291,8 +291,8 @@ EOF
 echo -e "${GREEN}✓ Application tests created${NC}"
 
 # Generate infrastructure test
-cat > "$MODULE_PATH/__tests__/infrastructure/sample.adapter.spec.ts" << 'EOF'
-import { SampleAdapter } from '../../infrastructure/adapters/sample.adapter';
+cat > "tests/unit/modules/$MODULE_NAME/infrastructure/sample.adapter.spec.ts" << 'EOF'
+import { SampleAdapter } from '@/modules/$MODULE_NAME/infrastructure/adapters/sample.adapter';
 
 describe('SampleAdapter', () => {
   let adapter: SampleAdapter;
@@ -322,6 +322,6 @@ echo "  4. Create use cases in application/use-cases/"
 echo "  5. Implement adapters in infrastructure/adapters/"
 echo "  6. Register module in src/bootstrap/main.ts"
 echo "  7. Add event types to src/shared/event-bus/event.types.ts if publishing events"
-echo "  8. Run tests: npm test -- $MODULE_PATH"
+echo "  8. Run tests: npm test -- tests/unit/modules/$MODULE_NAME"
 echo ""
 echo -e "${GREEN}✓ Done!${NC}"

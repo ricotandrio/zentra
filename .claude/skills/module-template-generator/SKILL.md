@@ -26,13 +26,14 @@ Scaffold new feature modules following clean architecture patterns. Generates bo
 #   │   ├── contracts/
 #   │   ├── dtos/
 #   │   └── use-cases/
-#   ├── infrastructure/
-#   │   ├── adapters/
-#   │   └── repositories/
-#   └── __tests__/
-#       ├── domain/
-#       ├── application/
-#       └── infrastructure/
+#   └── infrastructure/
+#       ├── adapters/
+#       └── repositories/
+# 
+# tests/unit/modules/notification/
+#   ├── domain/
+#   ├── application/
+#   └── infrastructure/
 ```
 
 ## Module Structure
@@ -60,14 +61,21 @@ src/modules/{moduleName}/
 │       ├── send-notification.usecase.ts
 │       ├── get-notification.usecase.ts
 │       └── list-notifications.usecase.ts
-├── infrastructure/            # Implementation details
-│   ├── adapters/              # Port implementations
-│   │   ├── email.adapter.ts
-│   │   └── smtp.adapter.ts
-│   └── repositories/          # Data access
-│       └── notification.repository.ts
-└── __tests__/                 # Test files
-    ├── domain/
-    ├── application/
-    └── infrastructure/
+└── infrastructure/            # Implementation details
+    ├── adapters/              # Port implementations
+    │   ├── email.adapter.ts
+    │   └── smtp.adapter.ts
+    └── repositories/          # Data access
+        └── notification.repository.ts
+
+tests/unit/modules/{moduleName}/
+├── domain/
+│   └── notification.entity.spec.ts
+├── application/
+│   ├── send-notification.usecase.spec.ts
+│   ├── get-notification.usecase.spec.ts
+│   └── list-notifications.usecase.spec.ts
+└── infrastructure/
+    ├── email.adapter.spec.ts
+    └── notification.repository.spec.ts
 ```
