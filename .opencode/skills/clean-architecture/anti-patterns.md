@@ -398,7 +398,3 @@ Before committing code, ask:
 4. **Is there any circular dependency?** (A → B → A is wrong)
 5. **Is domain independent?** (No SDK, DB, or framework calls)
 6. **Are errors translated?** (Adapter maps external errors to domain errors)
-7. **Can this be tested without mocks?** (Domain should be)
-8. **Can this be tested with mocks?** (Application should be)
-
-If you answered "no" to any, refactor before committing.

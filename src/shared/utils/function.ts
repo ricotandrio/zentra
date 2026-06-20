@@ -1,3 +1,4 @@
+import { IDX_HOLIDAYS } from './calendars';
 import { Utc } from './map';
 import { randomUUID } from 'node:crypto';
 
@@ -58,4 +59,22 @@ export const isoDateToLocaleString = (isoDate: string): string => {
  */
 export const generateTraceId = (): string => {
   return randomUUID();
+};
+
+/**
+ * Checks if a given date is a trading holiday based on the IDX holiday calendar.
+ * @param date - The date to check, in ISO format (e.g., '2026-01-01')
+ * @returns True if the date is a trading holiday, false otherwise
+ */
+export const isTradingHoliday = (date: string): boolean => {
+  const dateObj = new Date(date);
+  const isoDate = dateObj.toISOString().split('T')[0];
+
+  const holidayCalendar = IDX_HOLIDAYS[dateObj.getFullYear()];
+
+  return (
+    dateObj.getDay() === 0 || 
+    dateObj.getDay() === 6 ||
+    (holidayCalendar ? holidayCalendar.has(isoDate!) : false)
+  );
 };

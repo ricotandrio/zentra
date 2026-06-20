@@ -1,8 +1,11 @@
 ---
 name: event-driven-patterns
 description: How Zentra components communicate asynchronously using an in-memory event bus. Use when decoupling components, triggering background jobs from API, or delivering results from worker to Discord.
-user-invocable: true
-disable-model-invocation: false
+license: MIT
+compatibility: opencode
+metadata:
+  audience: developers
+  category: architecture
 ---
 
 # Event-Driven Architecture
@@ -200,18 +203,3 @@ it('subscriber handles event', async () => {
   expect(handler).toHaveBeenCalled();
 });
 ```
-
-## Implementation Checklist
-
-- [ ] Event types defined in `event.types.ts`
-- [ ] Event base interface includes `type`, `timestamp`, `source`
-- [ ] Union type exported: `type ApplicationEvent = Event1 | Event2 | ...`
-- [ ] Use cases inject `IEventBus` (not `EventBus` directly)
-- [ ] Events published in use cases, not in handlers/controllers
-- [ ] Subscribers are thin (call use cases if complex logic needed)
-- [ ] Event bus initialized once in bootstrap
-- [ ] All components receive eventBus from container/bootstrap
-- [ ] Tests mock the event bus
-- [ ] Error handling in subscribers (wrapped in try/catch or Promise.allSettled)
-- [ ] No circular event dependencies (A publishes → B subscribes → A publishes)
-- [ ] Documentation updated if new event types added

@@ -1,10 +1,3 @@
----
-name: clean-architecture
-description: Understand Zentra's clean architecture layers and dependency flow (inward only). Use when confused about dependencies, architecture violations, or to learn layer invariants and anti-patterns.
-user-invocable: true
-disable-model-invocation: false
----
-
 # Clean Architecture Pattern
 
 Core architectural principle for all Zentra code. **Golden Rule**: Dependencies flow **inward only**. Domain has zero external dependencies.
