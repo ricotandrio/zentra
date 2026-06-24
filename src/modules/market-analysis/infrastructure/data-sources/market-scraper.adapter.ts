@@ -18,8 +18,11 @@ export class MarketScraperAdapter {
       logger.info('Initializing market scraper adapter');
       this.browser = await chromium.launch({
         headless: false,
-        // headless: true,
-        // args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+        ],
       });
       this.page = await this.browser.newPage();
     } catch (error) {
