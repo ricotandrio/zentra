@@ -1,6 +1,7 @@
 import { Client } from 'discord.js';
 import { env } from '@/shared/config';
 import { logger } from '@/shared/logger';
+import { rotateLogs } from '@/shared/logger/log-rotate';
 import { startExpressApp } from '@/apps/api';
 import { startBot } from '@/apps/bot';
 import { MarketAnalysisJob, MarketAnalysisSubscriber } from '@/modules/market-analysis';
@@ -63,6 +64,16 @@ let discordClient: Client;
   logger.info('Market analysis subscriber initialized');
 
   subscriber.subscribe();
+
+  rotateLogs(env.LOG.HOT_ROTATE, env.LOG.COLD_ROTATE);
+
+  scheduler.register({
+    name: 'log-rotation',
+    schedule: '0 0 * * *',
+    execute: async () => {
+      rotateLogs(env.LOG.HOT_ROTATE, env.LOG.COLD_ROTATE);
+    },
+  });
 
   logger.info('All systems started (API + Bot + Worker)');
 })().catch((error) => {
