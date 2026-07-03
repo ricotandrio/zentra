@@ -6,7 +6,7 @@ Scaffold new feature modules following clean architecture patterns. Generates bo
 
 ```bash
 # Generate a new module
-./scripts/generate-module.sh notification
+.opencode/module-template-generator/generate-module.sh notification
 
 # Generates:
 # src/modules/notification/
@@ -203,12 +203,12 @@ After running the script, follow these steps:
 
 ```bash
 # Generate a simple module name
-./scripts/generate-module.sh ticket
+.opencode/module-template-generator/generate-module.sh ticket
 
 # Results in src/modules/ticket/
 
 # Generate a hyphenated name (auto-converts to camelCase for files)
-./scripts/generate-module.sh ticket-management
+.opencode/module-template-generator/generate-module.sh ticket-management
 
 # Results in src/modules/ticket-management/
 ```
