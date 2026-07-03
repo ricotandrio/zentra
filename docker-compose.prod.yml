@@ -2,9 +2,7 @@ version: '3.8'
 
 services:
   zentra:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${ACR_LOGIN_SERVER}/${IMAGE_APP_NAME}:${IMAGE_TAG}
     container_name: zentra
     ports:
       - ${EXPRESS_PORT}:${EXPRESS_PORT}
@@ -30,7 +28,7 @@ services:
       - LLM_MODEL_NAME=${LLM_MODEL_NAME:-gemini-2.0-flash}
       
       # Market data
-      - TRADING_SUMMARY_URL=${TRADING_SUMMARY_URL}
+      - MARKET_SUMMARY_URL=${MARKET_SUMMARY_URL}
       
       # Logging configuration
       - LOG_HOT_ROTATE=${LOG_HOT_ROTATE:-3}
