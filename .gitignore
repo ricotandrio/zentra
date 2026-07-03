@@ -224,6 +224,7 @@ $RECYCLE.BIN/
 # Zentra
 *.db
 .creds
+*.zip
 main.ts
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,macos,node,windows

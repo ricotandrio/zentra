@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  zentra:
+    image: ${ACR_LOGIN_SERVER}/${IMAGE_APP_NAME}:${IMAGE_TAG}
+    container_name: zentra
+    ports:
+      - ${EXPRESS_PORT}:${EXPRESS_PORT}
+    volumes:
+      - zentra-data:/app/data
+    environment:
+      # Node environment
+      - NODE_ENV=production
+      - DISPLAY=:99
+      
+      # Express server
+      - EXPRESS_PORT=3000
+      
+      # Discord bot
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
+      - DISCORD_STANDUP_CHANNEL_ID=${DISCORD_STANDUP_CHANNEL_ID}
+      
+      # LLM Configuration
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_PROVIDER_NAME=${LLM_PROVIDER_NAME:-gemini}
+      - LLM_MODEL_NAME=${LLM_MODEL_NAME:-gemini-2.0-flash}
+      
+      # Market data
+      - MARKET_SUMMARY_URL=${MARKET_SUMMARY_URL}
+      
+      # Logging configuration
+      - LOG_HOT_ROTATE=${LOG_HOT_ROTATE:-3}
+      - LOG_COLD_ROTATE=${LOG_COLD_ROTATE:-7}
+      
+      # API configuration
+      - API_BASE_URL=${API_BASE_URL:-http://localhost:3000}
+    
+    restart: unless-stopped
+    networks:
+      - zentra-network
+
+volumes:
+  zentra-data:
+    driver: local
+
+networks:
+  zentra-network:
+    driver: bridge

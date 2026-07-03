@@ -20,6 +20,10 @@ export const env = {
     PROVIDER_NAME: (process.env.LLM_PROVIDER_NAME as 'openai' | 'gemini') || 'gemini',
     MODEL_NAME: requireEnv('LLM_MODEL_NAME') || 'gemini-2.0-flash',
   },
+  LOG: {
+    HOT_ROTATE: parseInt(process.env.LOG_HOT_ROTATE || '3'),
+    COLD_ROTATE: parseInt(process.env.LOG_COLD_ROTATE || '7'),
+  },
   API_BASE_URL: process.env.API_BASE_URL || 'http://localhost:3000',
 };
 
