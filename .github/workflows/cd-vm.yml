@@ -40,7 +40,7 @@ jobs:
 
             echo "Creating .env"
 
-            cat <<EOF > .env
+            cat <<ENV > .env
               ACR_LOGIN_SERVER=${{ secrets.ACR_LOGIN_SERVER }}
               IMAGE_APP_NAME=${{ vars.IMAGE_APP_NAME }}
 
@@ -61,7 +61,7 @@ jobs:
               
               LOG_HOT_ROTATE=${{ vars.LOG_HOT_ROTATE }}
               LOG_COLD_ROTATE=${{ vars.LOG_COLD_ROTATE }}
-            EOF
+            ENV
 
             echo "Logging in to ACR"
 
