@@ -90,11 +90,11 @@ COPY --from=base /ms-playwright /ms-playwright
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 ENV DISPLAY=:99
 
+RUN mkdir -p /app/data && chown -R nodeuser:nodeuser /app/data
+
 # user (safer than root)
 RUN useradd -m nodeuser
 USER nodeuser
-
-RUN mkdir -p /app/data && chown -R nodeuser:nodeuser /app/data
 
 EXPOSE 3000
 
