@@ -36,7 +36,7 @@ jobs:
             echo "Connected to VM. Deploying application..."
             set -e
             
-            cd /app
+            cd ./zentra
 
             echo "Creating .env..."
 
