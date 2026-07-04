@@ -28,7 +28,7 @@ services:
       - LLM_MODEL_NAME=${LLM_MODEL_NAME:-gemini-2.0-flash}
       
       # Market data
-      - MARKET_SUMMARY_URL=${MARKET_SUMMARY_URL}
+      - TRADING_SUMMARY_URL=${TRADING_SUMMARY_URL}
       
       # Logging configuration
       - LOG_HOT_ROTATE=${LOG_HOT_ROTATE:-3}
