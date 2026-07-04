@@ -29,6 +29,9 @@ RUN apt-get update && apt-get install -y \
     libxrender1 \
     libxshmfence1 \
     libxtst6 \
+    make \
+    g++ \
+    python3 \
     wget \
     gnupg \
     xvfb \
@@ -36,6 +39,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
+ENV HUSKY=0
 RUN npm ci
 
 # Playwright browsers
