@@ -94,8 +94,10 @@ ENV DISPLAY=:99
 RUN useradd -m nodeuser
 USER nodeuser
 
+RUN mkdir -p /app/data && chown -R nodeuser:nodeuser /app/data
+
 EXPOSE 3000
 
 ENTRYPOINT ["dumb-init", "--"]
 
-CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x24 & node dist/bootstrap/main.js"]
+CMD ["sh", "-c", "rm -f /tmp/.X99-lock && Xvfb :99 -screen 0 1024x768x24 & export DISPLAY=:99 && node dist/bootstrap/main.js"]
