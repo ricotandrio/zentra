@@ -71,6 +71,7 @@ jobs:
               \"TRADING_SUMMARY_URL=$TRADING_SUMMARY_URL\" \
               \"LOG_HOT_ROTATE=$LOG_HOT_ROTATE\" \
               \"LOG_COLD_ROTATE=$LOG_COLD_ROTATE\" \
+              \"IMAGE_TAG=$IMAGE_TAG\" \
               > .env; \
             echo 'Logging in to ACR'; \
             echo \"$ACR_PASSWORD\" | docker login \"$ACR_LOGIN_SERVER\" -u \"$ACR_USERNAME\" --password-stdin; \
