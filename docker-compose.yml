@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   zentra:
+    image: zentra:latest
     build:
       context: .
       dockerfile: Dockerfile
