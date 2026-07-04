@@ -74,9 +74,9 @@ jobs:
             echo 'Logging in to ACR'; \
             echo \"$ACR_PASSWORD\" | docker login \"$ACR_LOGIN_SERVER\" -u \"$ACR_USERNAME\" --password-stdin; \
             echo 'Pulling latest image'; \
-            docker compose -f docker-compose.prod.yml pull; \
+            docker compose docker-compose.prod.yml pull; \
             echo 'Deploying'; \
-            docker compose -f docker-compose.prod.yml up -d; \
+            docker compose docker-compose.prod.yml up -d; \
             echo 'Cleaning'; \
             docker image prune -f; \
             echo 'Remove .env file'; \
