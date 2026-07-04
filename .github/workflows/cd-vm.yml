@@ -41,27 +41,27 @@ jobs:
             echo "Creating .env..."
 
             cat > .env <<EOT
-            ACR_LOGIN_SERVER=${{ secrets.ACR_LOGIN_SERVER }}
-            IMAGE_APP_NAME=${{ vars.IMAGE_APP_NAME }}
+ACR_LOGIN_SERVER=${{ secrets.ACR_LOGIN_SERVER }}
+IMAGE_APP_NAME=${{ vars.IMAGE_APP_NAME }}
 
-            NODE_ENV=${{ vars.NODE_ENV }}
-            EXPRESS_PORT=${{ vars.EXPRESS_PORT }}
+NODE_ENV=${{ vars.NODE_ENV }}
+EXPRESS_PORT=${{ vars.EXPRESS_PORT }}
 
-            DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}
-            DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }}
-            DISCORD_GUILD_ID=${{ secrets.DISCORD_GUILD_ID }}
-            DISCORD_STANDUP_CHANNEL_ID=${{ secrets.DISCORD_STANDUP_CHANNEL_ID }}
+DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}
+DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }}
+DISCORD_GUILD_ID=${{ secrets.DISCORD_GUILD_ID }}
+DISCORD_STANDUP_CHANNEL_ID=${{ secrets.DISCORD_STANDUP_CHANNEL_ID }}
 
-            LLM_API_KEY=${{ secrets.LLM_API_KEY }}
-            LLM_PROVIDER_NAME=${{ vars.LLM_PROVIDER_NAME }}
-            LLM_MODEL_NAME=${{ vars.LLM_MODEL_NAME }}
+LLM_API_KEY=${{ secrets.LLM_API_KEY }}
+LLM_PROVIDER_NAME=${{ vars.LLM_PROVIDER_NAME }}
+LLM_MODEL_NAME=${{ vars.LLM_MODEL_NAME }}
 
-            API_BASE_URL=${{ vars.API_BASE_URL }}
-            TRADING_SUMMARY_URL=${{ vars.MARKET_SUMMARY_URL }}
-            
-            LOG_HOT_ROTATE=${{ vars.LOG_HOT_ROTATE }}
-            LOG_COLD_ROTATE=${{ vars.LOG_COLD_ROTATE }}
-            EOT
+API_BASE_URL=${{ vars.API_BASE_URL }}
+TRADING_SUMMARY_URL=${{ vars.MARKET_SUMMARY_URL }}
+
+LOG_HOT_ROTATE=${{ vars.LOG_HOT_ROTATE }}
+LOG_COLD_ROTATE=${{ vars.LOG_COLD_ROTATE }}
+EOT
 
             echo "Logging in to ACR"
 
