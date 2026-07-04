@@ -31,56 +31,54 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Deploy via SSH
+        env:
+          AZURE_VM_IP: ${{ secrets.AZURE_VM_IP }}
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+          IMAGE_APP_NAME: ${{ vars.IMAGE_APP_NAME }}
+          NODE_ENV: ${{ vars.NODE_ENV }}
+          EXPRESS_PORT: ${{ vars.EXPRESS_PORT }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+          DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+          DISCORD_STANDUP_CHANNEL_ID: ${{ secrets.DISCORD_STANDUP_CHANNEL_ID }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_PROVIDER_NAME: ${{ vars.LLM_PROVIDER_NAME }}
+          LLM_MODEL_NAME: ${{ vars.LLM_MODEL_NAME }}
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          TRADING_SUMMARY_URL: ${{ vars.MARKET_SUMMARY_URL }}
+          LOG_HOT_ROTATE: ${{ vars.LOG_HOT_ROTATE }}
+          LOG_COLD_ROTATE: ${{ vars.LOG_COLD_ROTATE }}
         run: |
-          ssh -i ~/.ssh/vm_key.pem azureuser@${{ secrets.AZURE_VM_IP }} << EOF
-            echo "Connected to VM. Deploying application..."
-            set -e
-            
-            cd ./zentra
-
-            echo "Creating .env"
-
-            cat <<ENV > .env
-              ACR_LOGIN_SERVER=${{ secrets.ACR_LOGIN_SERVER }}
-              IMAGE_APP_NAME=${{ vars.IMAGE_APP_NAME }}
-
-              NODE_ENV=${{ vars.NODE_ENV }}
-              EXPRESS_PORT=${{ vars.EXPRESS_PORT }}
-
-              DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}
-              DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }}
-              DISCORD_GUILD_ID=${{ secrets.DISCORD_GUILD_ID }}
-              DISCORD_STANDUP_CHANNEL_ID=${{ secrets.DISCORD_STANDUP_CHANNEL_ID }}
-
-              LLM_API_KEY=${{ secrets.LLM_API_KEY }}
-              LLM_PROVIDER_NAME=${{ vars.LLM_PROVIDER_NAME }}
-              LLM_MODEL_NAME=${{ vars.LLM_MODEL_NAME }}
-
-              API_BASE_URL=${{ vars.API_BASE_URL }}
-              TRADING_SUMMARY_URL=${{ vars.MARKET_SUMMARY_URL }}
-              
-              LOG_HOT_ROTATE=${{ vars.LOG_HOT_ROTATE }}
-              LOG_COLD_ROTATE=${{ vars.LOG_COLD_ROTATE }}
-            ENV
-
-            echo "Logging in to ACR"
-
-            echo "${{ secrets.ACR_PASSWORD }}" | docker login \
-              ${{ secrets.ACR_LOGIN_SERVER }} \
-              -u "${{ secrets.ACR_USERNAME }}" \
-              --password-stdin
-
-            echo "Pulling latest image"
-            docker compose -f docker-compose.prod.yml pull
-
-            echo "Deploying"
-            docker compose -f docker-compose.prod.yml up -d
-
-            echo "Cleaning"
-            docker image prune -f
-
-            echo "Remove .env file"
-            rm -f .env
-            
-            echo "Deployment completed successfully"
-          EOF
+          ssh -i ~/.ssh/vm_key.pem azureuser@"$AZURE_VM_IP" "set -e; cd ./zentra; \
+            echo 'Connected to VM. Deploying application...'; \
+            echo 'Creating .env'; \
+            printf '%s\\n' \
+              \"ACR_LOGIN_SERVER=$ACR_LOGIN_SERVER\" \
+              \"IMAGE_APP_NAME=$IMAGE_APP_NAME\" \
+              \"NODE_ENV=$NODE_ENV\" \
+              \"EXPRESS_PORT=$EXPRESS_PORT\" \
+              \"DISCORD_BOT_TOKEN=$DISCORD_BOT_TOKEN\" \
+              \"DISCORD_CLIENT_ID=$DISCORD_CLIENT_ID\" \
+              \"DISCORD_GUILD_ID=$DISCORD_GUILD_ID\" \
+              \"DISCORD_STANDUP_CHANNEL_ID=$DISCORD_STANDUP_CHANNEL_ID\" \
+              \"LLM_API_KEY=$LLM_API_KEY\" \
+              \"LLM_PROVIDER_NAME=$LLM_PROVIDER_NAME\" \
+              \"LLM_MODEL_NAME=$LLM_MODEL_NAME\" \
+              \"API_BASE_URL=$API_BASE_URL\" \
+              \"TRADING_SUMMARY_URL=$TRADING_SUMMARY_URL\" \
+              \"LOG_HOT_ROTATE=$LOG_HOT_ROTATE\" \
+              \"LOG_COLD_ROTATE=$LOG_COLD_ROTATE\" \
+              > .env; \
+            echo 'Logging in to ACR'; \
+            echo \"$ACR_PASSWORD\" | docker login \"$ACR_LOGIN_SERVER\" -u \"$ACR_USERNAME\" --password-stdin; \
+            echo 'Pulling latest image'; \
+            docker compose -f docker-compose.prod.yml pull; \
+            echo 'Deploying'; \
+            docker compose -f docker-compose.prod.yml up -d; \
+            echo 'Cleaning'; \
+            docker image prune -f; \
+            echo 'Remove .env file'; \
+            rm -f .env; \
+            echo 'Deployment completed successfully'"
