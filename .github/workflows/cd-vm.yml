@@ -56,8 +56,8 @@ jobs:
             LLM_PROVIDER_NAME=${{ vars.LLM_PROVIDER_NAME }}
             LLM_MODEL_NAME=${{ vars.LLM_MODEL_NAME }}
 
-            API_BASE_URL=${{ secrets.API_BASE_URL }}
-            MARKET_SUMMARY_URL=${{ secrets.MARKET_SUMMARY_URL }}
+            API_BASE_URL=${{ vars.API_BASE_URL }}
+            TRADING_SUMMARY_URL=${{ vars.MARKET_SUMMARY_URL }}
             
             LOG_HOT_ROTATE=${{ vars.LOG_HOT_ROTATE }}
             LOG_COLD_ROTATE=${{ vars.LOG_COLD_ROTATE }}
