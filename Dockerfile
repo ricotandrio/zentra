@@ -1,38 +1,101 @@
-# Deps Stage
-FROM node:20-alpine AS deps
+# =========================
+# Base image
+# =========================
+FROM node:20-bookworm-slim AS base
+
 WORKDIR /app
-# Install build dependencies and chromium runtime libraries
-RUN apk add --no-cache \
-    python3 make g++ \
-    chromium chromium-swiftshader \
-    nss freetype harfbuzz ca-certificates ttf-dejavu
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    fonts-liberation \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libdrm2 \
+    libgbm1 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxrandr2 \
+    libxrender1 \
+    libxshmfence1 \
+    libxtst6 \
+    wget \
+    gnupg \
+    xvfb \
+    dumb-init \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY package*.json ./
 RUN npm ci
+
+# Install Playwright browsers
+# IMPORTANT: deterministic install path
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN npx playwright install chromium
 
-# Build Stage
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-# Runtime Stage
-FROM node:20-alpine AS production
-# Install runtime dependencies for chromium and xvfb (virtual display)
-RUN apk add --no-cache \
-    dumb-init \
-    chromium chromium-swiftshader \
-    glib libx11 libxkbcommon libxrandr libxinerama libxtst \
-    freetype fontconfig xdg-utils \
-    nss ca-certificates ttf-dejavu \
-    xvfb
-RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+
+# =========================
+# Production image
+# =========================
+FROM node:20-bookworm-slim AS production
+
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-RUN mkdir -p /app/data && chown -R nodejs:nodejs /app
-USER nodejs
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    fonts-liberation \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libdrm2 \
+    libgbm1 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxrandr2 \
+    libxrender1 \
+    libxshmfence1 \
+    libxtst6 \
+    xvfb \
+    dumb-init \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/dist ./dist
+COPY --from=base /ms-playwright /ms-playwright
+
+# IMPORTANT: ensure Playwright uses installed browsers
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV DISPLAY=:99
+
+# user (safer than root)
+RUN useradd -m nodeuser
+USER nodeuser
+
 EXPOSE 3000
+
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 & export DISPLAY=:99 && node dist/bootstrap/main.js"]
+
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x24 & node dist/bootstrap/main.js"]
