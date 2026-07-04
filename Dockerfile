@@ -1,7 +1,7 @@
 # =========================
 # Base image
 # =========================
-FROM node:20-bookworm-slim AS base
+FROM node:22-bookworm-slim AS base
 
 WORKDIR /app
 
@@ -29,6 +29,9 @@ RUN apt-get update && apt-get install -y \
     libxrender1 \
     libxshmfence1 \
     libxtst6 \
+    make \
+    g++ \
+    python3 \
     wget \
     gnupg \
     xvfb \
@@ -36,10 +39,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
+ENV HUSKY=0
 RUN npm ci
 
-# Install Playwright browsers
-# IMPORTANT: deterministic install path
+# Playwright browsers
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN npx playwright install chromium
 
@@ -50,7 +53,7 @@ RUN npm run build
 # =========================
 # Production image
 # =========================
-FROM node:20-bookworm-slim AS production
+FROM node:22-bookworm-slim AS production
 
 WORKDIR /app
 
@@ -82,20 +85,24 @@ RUN apt-get update && apt-get install -y \
     dumb-init \
     && rm -rf /var/lib/apt/lists/*
 
+# create user FIRST (important fix)
+RUN useradd -m nodeuser
+
+# copy app
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/dist ./dist
 COPY --from=base /ms-playwright /ms-playwright
 
-# IMPORTANT: ensure Playwright uses installed browsers
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 ENV DISPLAY=:99
 
-# user (safer than root)
-RUN useradd -m nodeuser
+# create data folder AFTER user exists
+RUN mkdir -p /app/data && chown -R nodeuser:nodeuser /app
+
 USER nodeuser
 
 EXPOSE 3000
 
 ENTRYPOINT ["dumb-init", "--"]
 
-CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x24 & node dist/bootstrap/main.js"]
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 & export DISPLAY=:99 && exec node dist/bootstrap/main.js"]
