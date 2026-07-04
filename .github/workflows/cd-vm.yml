@@ -23,8 +23,8 @@ jobs:
       - name: Setup SSH trust
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.AZURE_ZENTRA }}" > vm_key.pem
-          chmod 400 vm_key.pem
+          echo "${{ secrets.AZURE_ZENTRA }}" > ~/.ssh/vm_key.pem
+          chmod 400 ~/.ssh/vm_key.pem
           ssh-keyscan -H "${{ secrets.AZURE_VM_IP }}" >> ~/.ssh/known_hosts
 
       - name: Checkout code
@@ -32,7 +32,7 @@ jobs:
 
       - name: Deploy via SSH
         run: |
-          ssh -i vm_key.pem azureuser@${{ secrets.AZURE_VM_IP }} << EOF
+          ssh -i ~/.ssh/vm_key.pem azureuser@${{ secrets.AZURE_VM_IP }} << EOF
             echo "Connected to VM. Deploying application..."
             set -e
             
