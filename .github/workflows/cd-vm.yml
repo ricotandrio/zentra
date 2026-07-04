@@ -76,7 +76,7 @@ jobs:
             echo 'Logging in to ACR'; \
             echo \"$ACR_PASSWORD\" | docker login \"$ACR_LOGIN_SERVER\" -u \"$ACR_USERNAME\" --password-stdin; \
             echo 'Pulling latest image'; \
-            docker-compose -f docker-compose.prod.yml pull; \
+            docker pull "$ACR_LOGIN_SERVER/$IMAGE_APP_NAME:$IMAGE_TAG"; \
             echo 'Deploying'; \
             docker-compose -f docker-compose.prod.yml up -d; \
             echo 'Cleaning'; \
