@@ -1,10 +1,10 @@
 name: sync-vm
 
 on:
-  workflow_dispatch:
   workflow_run:
     workflows: ["build-and-push-to-acr"]
     types: [completed]
+  workflow_dispatch:
 
 jobs:
   sync:
