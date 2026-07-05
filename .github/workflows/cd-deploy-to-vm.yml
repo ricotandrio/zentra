@@ -1,0 +1,49 @@
+name: deploy-to-vm
+
+on:
+  workflow_run:
+    workflows: ["sync-vm"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    environment: PROD
+    name: Deploy to VM
+    runs-on: ubuntu-latest
+
+    if: >
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        github.event.workflow_run.conclusion == 'success'
+      }}
+
+    steps:   
+      - name: Setup SSH trust
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AZURE_ZENTRA }}" > ~/.ssh/vm_key.pem
+          chmod 400 ~/.ssh/vm_key.pem
+          ssh-keyscan -H "${{ secrets.AZURE_VM_IP }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy via SSH
+        run: |
+          ssh -i ~/.ssh/vm_key.pem azureuser@"${{ secrets.AZURE_VM_IP }}" << 'EOF'
+            set -e
+
+            cd ./zentra
+
+            echo 'Logging in'
+            echo \"$ACR_PASSWORD\" | docker login \"$ACR_LOGIN_SERVER\" -u \"$ACR_USERNAME\" --password-stdin
+
+            echo "Pulling latest image"
+            docker pull ${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:latest
+
+            echo "Restarting services"
+            docker-compose -f docker-compose.prod.yml up -d
+
+            echo "Cleaning up unused images"
+            docker image prune -f
+
+            echo "Deployment completed successfully."
+          EOF
