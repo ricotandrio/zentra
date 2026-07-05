@@ -34,7 +34,7 @@ jobs:
             cd ./zentra
 
             echo 'Logging in'
-            echo ${{ secrets.ACR_PASSWORD }} | docker login ${{ secrets.ACR_LOGIN_SERVER }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
+            echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
 
             echo "Pulling latest image"
             docker pull ${{ secrets.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_APP_NAME }}:${{ vars.IMAGE_TAG }}
