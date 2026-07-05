@@ -5,7 +5,6 @@ on:
   workflow_run:
     workflows: ["build-and-push-to-acr"]
     types: [completed]
-  push:
 
 jobs:
   sync:
@@ -19,6 +18,9 @@ jobs:
           echo "${{ secrets.AZURE_ZENTRA }}" > ~/.ssh/vm_key.pem
           chmod 400 ~/.ssh/vm_key.pem
           ssh-keyscan -H "${{ secrets.AZURE_VM_IP }}" >> ~/.ssh/known_hosts
+      
+      - name: Checkout code
+        uses: actions/checkout@v3
       
       - name: Copy docker-compose file
         run: |
