@@ -37,6 +37,9 @@ jobs:
 
             rm -f .env
 
+            echo ACR_LOGIN_SERVER=${{ secrets.ACR_LOGIN_SERVER }} >> .env
+            echo IMAGE_APP_NAME=${{ vars.IMAGE_APP_NAME }} >> .env
+            echo IMAGE_TAG=${{ vars.IMAGE_TAG }} >> .env
             echo NODE_ENV=${{ vars.NODE_ENV }} >> .env
             echo EXPRESS_PORT=${{ vars.EXPRESS_PORT }} >> .env
             echo DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }} >> .env
