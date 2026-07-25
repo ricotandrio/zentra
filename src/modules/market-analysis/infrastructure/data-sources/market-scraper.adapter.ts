@@ -1,6 +1,6 @@
 import { chromium, Browser, Page } from 'playwright';
 import { MarketTickerData, MarketApiResponse } from './market-scraper.types';
-import { logger } from '@/shared/logger';
+import { logging } from '@/shared/logger';
 import { MARKET_SUMMARY_URL } from '@/shared/config';
 import { MarketSummary } from './market-scraper.types';
 import { isoDateToLocaleString } from '../../../../shared/utils/function';
@@ -15,7 +15,7 @@ export class MarketScraperAdapter {
 
   async initialize(): Promise<void> {
     try {
-      logger.info('Initializing market scraper adapter');
+      logging.infra.scraperInitialized();
       this.browser = await chromium.launch({
         headless: false,
         args: [
@@ -26,7 +26,7 @@ export class MarketScraperAdapter {
       });
       this.page = await this.browser.newPage();
     } catch (error) {
-      logger.error(`Failed to initialize browser: ${error}`);
+      logging.infra.scraperInitFailed({ error });
       throw error;
     }
   }
@@ -36,7 +36,7 @@ export class MarketScraperAdapter {
       await this.browser.close();
       this.browser = null;
       this.page = null;
-      logger.info('Market scraper adapter closed');
+      logging.infra.scraperClosed();
     }
   }
 
@@ -49,7 +49,7 @@ export class MarketScraperAdapter {
     }
 
     try {
-      logger.info('Fetching raw trading summary from market data source');
+      logging.infra.rawDataFetching();
 
       await this.page.goto(MARKET_DATA_URL, {
         waitUntil: 'domcontentloaded',
@@ -66,14 +66,14 @@ export class MarketScraperAdapter {
       const response: MarketApiResponse = JSON.parse(content || '{}');
 
       if (!response.data || !Array.isArray(response.data)) {
-        logger.error('Invalid market response format');
+        logging.infra.invalidResponse();
         throw new Error('Invalid market response format - missing data array');
       }
 
-      logger.info(`Retrieved ${response.data.length} tickers from market data source`);
+      logging.infra.rawDataFetched({ tickerCount: response.data.length });
       return response;
     } catch (error) {
-      logger.error(`Failed to fetch market data: ${error}`);
+      logging.infra.rawDataFailed({ error });
       // eslint-disable-next-line preserve-caught-error
       throw new Error(
         `Market scraper error: ${error instanceof Error ? error.message : String(error)}`

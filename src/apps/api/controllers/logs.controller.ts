@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { logger } from '@/shared/logger';
+import { logging } from '@/shared/logger';
 import { logReader } from '../utils/log-reader';
 
 export const queryLogsController = () => {
@@ -7,18 +7,9 @@ export const queryLogsController = () => {
     try {
       const { query = '{source="system"}', limit = 100, offset = 0, startDate, endDate } = req.query;
 
-      logger.info(
-        {
-          source: 'api',
-          operation: 'query-logs',
-          request: {
-            method: req.method,
-            path: req.path,
-            query: { query, limit, offset, startDate, endDate },
-          },
-        },
-        'Fetching logs with LogQL query'
-      );
+      logging.api.queryLogs({
+        request: { method: req.method, path: req.path, query: { query, limit, offset, startDate, endDate } },
+      });
 
       // Parse dates if provided
       let parsedStartDate: Date | undefined;
@@ -37,15 +28,7 @@ export const queryLogsController = () => {
 
       const result = await logReader.queryLogs(queryStr, limitNum, offsetNum, parsedStartDate, parsedEndDate);
 
-      logger.info(
-        {
-          source: 'api',
-          operation: 'query-logs',
-          response: { statusCode: 200 },
-          metadata: { resultCount: result.logs.length, total: result.total },
-        },
-        'Logs fetched successfully'
-      );
+      logging.api.queryLogsFetched({ resultCount: result.logs.length, total: result.total });
 
       res.status(200).json({
         success: true,
@@ -54,15 +37,7 @@ export const queryLogsController = () => {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
 
-      logger.error(
-        {
-          source: 'api',
-          operation: 'query-logs',
-          error,
-          response: { statusCode: 500 },
-        },
-        'Error querying logs'
-      );
+      logging.api.queryLogsFailed({ error });
 
       res.status(500).json({
         success: false,
@@ -77,17 +52,9 @@ export const getLogsStatsController = () => {
     try {
       const { startDate, endDate } = req.query;
 
-      logger.info(
-        {
-          source: 'api',
-          operation: 'logs-stats',
-          request: {
-            method: req.method,
-            path: req.path,
-          },
-        },
-        'Fetching logs statistics'
-      );
+      logging.api.logsStats({
+        request: { method: req.method, path: req.path },
+      });
 
       let parsedStartDate: Date | undefined;
       let parsedEndDate: Date | undefined;
@@ -128,15 +95,7 @@ export const getLogsStatsController = () => {
         stats.byLevel[log.level] = (stats.byLevel[log.level] || 0) + 1;
       });
 
-      logger.info(
-        {
-          source: 'api',
-          operation: 'logs-stats',
-          response: { statusCode: 200 },
-          metadata: { logCount: logs.length },
-        },
-        'Logs statistics fetched successfully'
-      );
+      logging.api.logsStatsFetched({ logCount: logs.length });
 
       res.status(200).json({
         success: true,
@@ -145,15 +104,7 @@ export const getLogsStatsController = () => {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
 
-      logger.error(
-        {
-          source: 'api',
-          operation: 'logs-stats',
-          error,
-          response: { statusCode: 500 },
-        },
-        'Error fetching logs statistics'
-      );
+      logging.api.logsStatsFailed({ error });
 
       res.status(500).json({
         success: false,

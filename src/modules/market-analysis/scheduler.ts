@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import { MarketAnalysisJob } from './job';
 import { IEventBus } from '@/shared/event-bus';
 import { TickerManagementModule } from '@/modules/ticker-management';
-import { logger } from '@/shared/logger';
+import { logging } from '@/shared/logger';
 import { generateTraceId } from '@/shared/utils';
 
 /** 
@@ -33,11 +33,7 @@ export class MarketAnalysisScheduler {
   start(): void {
     const { schedule = '0 18 * * *' } = this.config;
 
-    logger.info({
-      source: 'system',
-      operation: 'market-analysis-scheduler-start',
-      metadata: { schedule },
-    }, `Starting market analysis scheduler at ${schedule}`);
+    logging.scheduler.started({ schedule });
 
     this.task = cron.schedule(schedule, async () => {
       try {
@@ -45,11 +41,7 @@ export class MarketAnalysisScheduler {
         const job = new MarketAnalysisJob({ ...this.config, traceId });
         await job.execute();
       } catch (error) {
-        logger.error({
-          source: 'system',
-          operation: 'market-analysis-scheduler-job',
-          error,
-        }, 'Scheduled market analysis job failed');
+        logging.scheduler.scheduledJobFailed({ error });
       }
     });
   }
@@ -57,10 +49,7 @@ export class MarketAnalysisScheduler {
   stop(): void {
     if (this.task) {
       this.task.stop();
-      logger.info({
-        source: 'system',
-        operation: 'market-analysis-scheduler-stop',
-      }, 'Market analysis scheduler stopped');
+      logging.scheduler.stopped();
     }
   }
 }

@@ -1,7 +1,7 @@
 import cron, { ScheduledTask } from 'node-cron';
 
 import { SchedulerJob } from './scheduler.types';
-import { logger } from '@/shared/logger';
+import { logging } from '@/shared/logger';
 
 export class Scheduler {
   private tasks = new Map<string, ScheduledTask>();
@@ -13,12 +13,7 @@ export class Scheduler {
         try {
           await job.execute();
         } catch (error) {
-          logger.error({
-            source: 'system',
-            operation: 'scheduler-job',
-            metadata: { jobName: job.name },
-            error,
-          }, `[Scheduler] Job failed: ${job.name}`);
+          logging.scheduler.jobFailed({ jobName: job.name, error });
         }
       }
     );

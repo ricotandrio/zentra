@@ -1,6 +1,5 @@
 import express, { Express } from 'express';
-import { Client as DiscordClient } from 'discord.js';
-import { logger } from '@/shared/logger';
+import { logging } from '@/shared/logger';
 import { IEventBus } from '@/shared/event-bus';
 import { createHealthRoutes } from './routes/health';
 import { createWorkerRoutes } from './routes/workers';
@@ -8,7 +7,6 @@ import { createLogsRoutes } from './routes/logs';
 import path from 'path';
 
 export const createExpressApp = (
-  discordClient?: DiscordClient,
   eventBus?: IEventBus
 ): Express => {
   const app = express();
@@ -23,16 +21,11 @@ export const createExpressApp = (
 
 export const startExpressApp = (
   port: number,
-  discordClient?: DiscordClient,
   eventBus?: IEventBus
 ) => {
-  const app = createExpressApp(discordClient, eventBus);
+  const app = createExpressApp(eventBus);
 
   app.listen(port, () => {
-    logger.info({ 
-      source: 'api',
-      operation: 'server-startup',
-      metadata: { port },
-    }, `API server running on http://localhost:${port}`);
+    logging.api.serverStarted({ port });
   });
 };

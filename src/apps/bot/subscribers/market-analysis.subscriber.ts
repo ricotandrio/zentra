@@ -1,5 +1,5 @@
 import { Client as DiscordClient, EmbedBuilder } from 'discord.js';
-import { logger } from '@/shared/logger';
+import { logging } from '@/shared/logger';
 import { IEventBus, MarketAnalysisCompleteEvent, MarketAnalysisErrorEvent } from '@/shared/event-bus';
 import { WorkerWebhookPayload } from '@/modules/market-analysis/contracts/market-results.dto';
 import { AnalyzeTickersDiscordResultUseCase } from '@/modules/market-analysis/application/usecases/analyze-tickers-discord-result.usecase';
@@ -21,13 +21,7 @@ export const registerMarketAnalysisSubscriber = (
     async (event) => {
       const traceId = event.timestamp.toISOString();
       try {
-        logger.info({
-          source: 'bot',
-          operation: 'deliver-market-analysis',
-          traceId,
-          eventId: event.timestamp.toISOString(),
-          metadata: { resultsCount: event.data.results.length },
-        }, 'Bot received market analysis complete event');
+        logging.bot.analysisReceived({ traceId, resultsCount: event.data.results.length });
 
         // Parse sentiment strings back to objects and convert to use case payload format
         const results = event.data.results.map((r) => {
@@ -57,13 +51,7 @@ export const registerMarketAnalysisSubscriber = (
         const channel = await discordClient.channels.fetch(channelId);
 
         if (!channel?.isTextBased()) {
-          logger.error({
-            source: 'bot',
-            operation: 'deliver-market-analysis',
-            traceId,
-            metadata: { channelId },
-            error: 'Invalid channel: not a text channel',
-          }, 'Invalid channel: not a text channel');
+          logging.bot.analysisInvalidChannel({ traceId, channelId });
           return;
         }
 
@@ -80,19 +68,9 @@ export const registerMarketAnalysisSubscriber = (
           }
         }
 
-        logger.info({
-          source: 'bot',
-          operation: 'deliver-market-analysis',
-          traceId,
-          metadata: { channelId, messageCount: chunks.length, embeds: embeds.length },
-        }, 'Market analysis results delivered to Discord');
+        logging.bot.analysisDelivered({ traceId, channelId, messageCount: chunks.length, embeds: embeds.length });
       } catch (error) {
-        logger.error({
-          source: 'bot',
-          operation: 'deliver-market-analysis',
-          traceId,
-          error,
-        }, 'Error handling market analysis complete event in bot');
+        logging.bot.analysisDeliveryFailed({ traceId, error });
       }
     }
   );
@@ -103,27 +81,13 @@ export const registerMarketAnalysisSubscriber = (
     async (event) => {
       const traceId = event.timestamp.toISOString();
       try {
-        logger.error({
-          source: 'bot',
-          operation: 'handle-market-analysis-error',
-          traceId,
-          eventId: event.timestamp.toISOString(),
-          error: event.data.error,
-        }, 'Market analysis job failed - bot received error event');
+        logging.bot.analysisErrorReceived({ traceId, error: event.data.error });
         // Optional: send error notification to admin channel
       } catch (error) {
-        logger.error({
-          source: 'bot',
-          operation: 'handle-market-analysis-error',
-          traceId,
-          error,
-        }, 'Error handling market analysis error event in bot');
+        logging.bot.analysisErrorDeliveryFailed({ traceId, error });
       }
     }
   );
 
-  logger.info({
-    source: 'bot',
-    operation: 'register-subscribers',
-  }, 'Bot market analysis event subscribers registered');
+  logging.bot.subscribersRegistered({ domain: 'market analysis' });
 };

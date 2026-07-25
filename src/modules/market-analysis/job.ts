@@ -4,7 +4,7 @@ import { AnalyzeTickersUseCase } from './application/usecases/analyze-tickers.us
 import { MarketSummaryUseCase } from './application/usecases/market-summary.usecase';
 import { SchedulerJob } from '@/shared/scheduler/scheduler.types';
 import { convertCronScheduleHour, Utc } from '@/shared/utils';
-import { logger } from '@/shared/logger';
+import { logging } from '@/shared/logger';
 
 interface MarketAnalysisJobConfig {
   channelId: string;
@@ -25,20 +25,12 @@ export class MarketAnalysisJob implements SchedulerJob {
     const traceIdForThisRun = traceId || `market-analysis-${Date.now()}`;
 
     try {
-      logger.info({
-        source: 'worker',
-        operation: 'market-analysis-job',
-        traceId: traceIdForThisRun,
-      }, 'Starting market analysis job');
+      logging.marketAnalysis.jobStarted({ traceId: traceIdForThisRun });
 
       const tickers = await tickerManagementModule.getTickersUseCase.execute();
 
       if (!tickers || tickers.length === 0) {
-        logger.info({
-          source: 'worker',
-          operation: 'market-analysis-job',
-          traceId: traceIdForThisRun,
-        }, 'No tickers to analyze');
+        logging.marketAnalysis.noTickers({ traceId: traceIdForThisRun });
         return;
       }
 
@@ -50,12 +42,7 @@ export class MarketAnalysisJob implements SchedulerJob {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      logger.error({
-        source: 'worker',
-        operation: 'market-analysis-job',
-        error,
-        traceId: traceIdForThisRun,
-      }, 'Error executing market analysis job');
+      logging.marketAnalysis.jobFailed({ traceId: traceIdForThisRun, error });
 
       // Publish error event with same traceId
       const errorEvent: MarketAnalysisErrorEvent = {
@@ -83,11 +70,7 @@ export class MarketAnalysisJob implements SchedulerJob {
     const analyzeUseCase = new AnalyzeTickersUseCase();
     const tickerSymbols = tickers.map((t) => t.symbol);
 
-    logger.info({
-      source: 'worker',
-      operation: 'analyze-tickers',
-      metadata: { tickerCount: tickerSymbols.length },
-    }, `Analyzing ${tickerSymbols.length} tickers`);
+    logging.marketAnalysis.tickersAnalyzed({ tickerCount: tickerSymbols.length });
 
     const analyses = await analyzeUseCase.execute(tickerSymbols);
 
@@ -123,20 +106,11 @@ export class MarketAnalysisJob implements SchedulerJob {
       },
     };
 
-    logger.info({
-      source: 'worker',
-      operation: 'publish-market-analysis-complete',
-      traceId,
-      metadata: { resultsCount: results.length },
-    }, `Publishing market analysis complete event with ${results.length} results`);
+    logging.marketAnalysis.analysisPublished({ traceId, resultsCount: results.length });
 
     await eventBus.publish(event);
 
-    logger.info({
-      source: 'worker',
-      operation: 'market-analysis-complete',
-      metadata: { analysisCount: analyses.length },
-    }, `Market analysis completed with ${analyses.length} results`);
+    logging.marketAnalysis.analysisCompleted({ analysisCount: analyses.length });
   }
 
   /**
@@ -146,10 +120,7 @@ export class MarketAnalysisJob implements SchedulerJob {
     const { channelId, eventBus } = this.config;
 
     try {
-      logger.info({
-        source: 'worker',
-        operation: 'fetch-market-summary',
-      }, 'Fetching market summary from market data source');
+      logging.marketAnalysis.summaryFetching();
       const marketSummaryUseCase = new MarketSummaryUseCase();
       const marketSummary = await marketSummaryUseCase.execute();
 
@@ -167,19 +138,10 @@ export class MarketAnalysisJob implements SchedulerJob {
         },
       };
 
-      logger.info({
-        source: 'worker',
-        operation: 'publish-market-summary',
-        traceId,
-        metadata: { totalTickers: marketSummary.totalTickers },
-      }, `Publishing market summary event with ${marketSummary.totalTickers} tickers`);
+      logging.marketAnalysis.summaryPublished({ traceId, totalTickers: marketSummary.totalTickers });
       await eventBus.publish(marketSummaryEvent);
     } catch (error) {
-      logger.warn({
-        source: 'worker',
-        operation: 'fetch-market-summary',
-        error,
-      }, 'Failed to fetch market summary, continuing without it');
+      logging.marketAnalysis.summaryFetchFailed({ error });
       // Don't throw, allow the job to complete even if market summary fails
     }
   }

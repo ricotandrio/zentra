@@ -1,5 +1,5 @@
 import { Client as DiscordClient } from 'discord.js';
-import { logger } from '@/shared/logger';
+import { logging } from '@/shared/logger';
 import { IEventBus } from '@/shared/event-bus';
 import { MarketSummaryDiscordResultUseCase } from '@/modules/market-analysis/application/usecases/market-summary-discord-result.usecase';
 import { MarketSummary } from '@/modules/market-analysis/infrastructure/data-sources';
@@ -31,13 +31,7 @@ export const registerMarketSummarySubscriber = (
     async (event) => {
       const traceId = event.traceId;
       try {
-        logger.info({
-          source: 'bot',
-          operation: 'deliver-market-summary',
-          traceId,
-          eventId: event.timestamp.toISOString(),
-          metadata: { totalTickers: event.data.summary.totalTickers },
-        }, 'Bot received market summary event');
+        logging.bot.summaryReceived({ traceId, totalTickers: event.data.summary.totalTickers });
 
         // Use the use case to format results
         const useCase = new MarketSummaryDiscordResultUseCase();
@@ -47,13 +41,7 @@ export const registerMarketSummarySubscriber = (
         const channel = await discordClient.channels.fetch(event.data.channelId);
 
         if (!channel?.isTextBased()) {
-          logger.error({
-            source: 'bot',
-            operation: 'deliver-market-summary',
-            traceId,
-            metadata: { channelId: event.data.channelId },
-            error: 'Invalid channel: not a text channel',
-          }, 'Invalid channel: not a text channel');
+          logging.bot.summaryInvalidChannel({ traceId, channelId: event.data.channelId });
           return;
         }
 
@@ -62,25 +50,12 @@ export const registerMarketSummarySubscriber = (
           await channel.send({ embeds });
         }
 
-        logger.info({
-          source: 'bot',
-          operation: 'deliver-market-summary',
-          traceId,
-          metadata: { channelId: event.data.channelId, title },
-        }, 'Market summary delivered to Discord');
+        logging.bot.summaryDelivered({ traceId, channelId: event.data.channelId, title });
       } catch (error) {
-        logger.error({
-          source: 'bot',
-          operation: 'deliver-market-summary',
-          traceId,
-          error,
-        }, 'Error handling market summary event in bot');
+        logging.bot.summaryDeliveryFailed({ traceId, error });
       }
     }
   );
 
-  logger.info({
-    source: 'bot',
-    operation: 'register-subscribers',
-  }, 'Bot market summary event subscriber registered');
+  logging.bot.subscribersRegistered({ domain: 'market summary' });
 };

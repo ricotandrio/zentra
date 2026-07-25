@@ -1,6 +1,6 @@
 import { Client } from 'discord.js';
 import { env } from '@/shared/config';
-import { logger } from '@/shared/logger';
+import { logging } from '@/shared/logger';
 import { rotateLogs } from '@/shared/logger/log-rotate';
 import { startExpressApp } from '@/apps/api';
 import { startBot } from '@/apps/bot';
@@ -14,13 +14,13 @@ import { Scheduler } from '@/shared/scheduler';
  * Shared dependencies initialization
  */
 const eventBus = initializeEventBus();
-logger.info('Event bus initialized');
+logging.system.componentInitialized({ component: 'Event bus' });
 
 const tickerManagementModule = createTickerManagementModule();
-logger.info('Ticker management module initialized');
+logging.system.componentInitialized({ component: 'Ticker management module' });
 
 const scheduler = new Scheduler();
-logger.info('Scheduler initialized');
+logging.system.componentInitialized({ component: 'Scheduler' });
 
 let discordClient: Client;
 
@@ -41,10 +41,10 @@ let discordClient: Client;
     eventBus,
     tickerManagementModule
   );
-  logger.info('Discord bot started');
+  logging.system.componentInitialized({ component: 'Discord bot' });
 
-  startExpressApp(env.EXPRESS.PORT, discordClient, eventBus);
-  logger.info('Express API server started');
+  startExpressApp(env.EXPRESS.PORT, eventBus);
+  logging.system.componentInitialized({ component: 'Express API server' });
 
   const marketAnalysisJob = new MarketAnalysisJob({
     eventBus,
@@ -54,14 +54,14 @@ let discordClient: Client;
   });
 
   scheduler.register(marketAnalysisJob);
-  logger.info('Market analysis scheduler initialized');
+  logging.system.componentInitialized({ component: 'Market analysis scheduler' });
 
   const subscriber = new MarketAnalysisSubscriber(
     eventBus,
     channelId,
     tickerManagementModule
   );
-  logger.info('Market analysis subscriber initialized');
+  logging.system.componentInitialized({ component: 'Market analysis subscriber' });
 
   subscriber.subscribe();
 
@@ -75,9 +75,9 @@ let discordClient: Client;
     },
   });
 
-  logger.info('All systems started (API + Bot + Worker)');
+  logging.system.allStarted();
 })().catch((error) => {
-  logger.error(error, 'Failed to start application');
+  logging.system.startupFailed({ error });
   process.exit(1);
 });
 
@@ -89,7 +89,7 @@ process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 
 function shutdown() {
-  logger.info('Shutting down...');
+  logging.system.shutdown();
   discordClient.destroy();
   tickerManagementModule.closeDb();
   process.exit(0);

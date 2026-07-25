@@ -1,5 +1,5 @@
 import { Message } from 'discord.js';
-import { logger } from '@/shared/logger';
+import { logging } from '@/shared/logger';
 import { IEventBus } from '@/shared/event-bus';
 
 /**
@@ -17,18 +17,9 @@ export const handleNaturalLanguageMessage = async (
     const response = `You said: ${content}`;
 
     await message.reply(response);
-    logger.info({
-      source: 'bot',
-      operation: 'handle-message',
-      metadata: { userId: message.author.id, contentLength: content.length },
-    }, `Echoed message: ${content}`);
+    logging.bot.messageHandled({ userId: message.author.id, contentLength: content.length });
   } catch (error) {
-    logger.error({
-      source: 'bot',
-      operation: 'handle-message',
-      metadata: { userId: message.author.id },
-      error,
-    }, 'Error handling natural language message');
+    logging.bot.messageFailed({ userId: message.author.id, error });
     await message.reply('Sorry, I encountered an error processing your message.');
   }
 };

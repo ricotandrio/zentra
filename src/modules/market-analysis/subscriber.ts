@@ -1,7 +1,7 @@
 import { IEventBus, MarketAnalysisCompleteEvent, MarketAnalysisErrorEvent, WorkerMarketAnalysisTriggerEvent } from '@/shared/event-bus';
 import { MarketAnalysisJob } from './job';
 import { TickerManagementModule } from '@/modules/ticker-management';
-import { logger } from '@/shared/logger';
+import { logging } from '@/shared/logger';
 
 /**
  * Market Analysis Event Subscriber
@@ -35,10 +35,7 @@ export class MarketAnalysisSubscriber {
       this.handleError.bind(this)
     );
 
-    logger.info({
-      source: 'system',
-      operation: 'market-analysis-subscriber-init',
-    }, 'Market analysis subscriber initialized');
+    logging.marketAnalysis.subscriberInit();
 
     return { unsubscribeComplete, unsubscribeError, unsubscribeTrigger };
   }
@@ -55,13 +52,7 @@ export class MarketAnalysisSubscriber {
     });
     await job.execute();
 
-    logger.info({
-      source: 'worker',
-      operation: 'market-analysis-trigger',
-      traceId: event.traceId,
-      eventId: event.timestamp.toISOString(),
-      metadata: { timestamp: event.timestamp },
-    }, 'Received market analysis trigger event - worker should start analysis');
+    logging.marketAnalysis.triggerReceived({ traceId: event.traceId });
   }
 
   /**
@@ -70,17 +61,12 @@ export class MarketAnalysisSubscriber {
   private async handleComplete(event: MarketAnalysisCompleteEvent): Promise<void> {
     const { data } = event;
     const traceId = event.traceId;
-    logger.info({
-      source: 'worker',
-      operation: 'market-analysis-complete',
-      traceId: event.traceId,
-      eventId: event.timestamp.toISOString(),
-      metadata: {
-        resultsCount: data.results.length,
-        channelId: data.channelId,
-        timestamp: data.timestamp,
-      },
-    }, 'Market analysis completed - results ready for delivery');
+
+    logging.marketAnalysis.resultsReceived({
+      traceId,
+      resultsCount: data.results.length,
+      channelId: data.channelId,
+    });
 
     // Log sentiment summary
     const sentiments = data.results.reduce(
@@ -92,12 +78,7 @@ export class MarketAnalysisSubscriber {
       {} as Record<string, number>
     );
 
-    logger.debug({
-      source: 'worker',
-      operation: 'market-analysis-complete',
-      traceId,
-      metadata: { sentiments },
-    }, 'Sentiment distribution');
+    logging.marketAnalysis.sentimentDistribution({ traceId, sentiments });
   }
 
   /**
@@ -106,13 +87,7 @@ export class MarketAnalysisSubscriber {
   private async handleError(event: MarketAnalysisErrorEvent): Promise<void> {
     const { data } = event;
     const traceId = event.traceId;
-    logger.error({
-      source: 'worker',
-      operation: 'market-analysis-error',
-      traceId,
-      eventId: event.timestamp.toISOString(),
-      error: data.error,
-      metadata: { timestamp: data.timestamp },
-    }, 'Market analysis job failed');
+
+    logging.marketAnalysis.errorReceived({ traceId, error: data.error });
   }
 }
