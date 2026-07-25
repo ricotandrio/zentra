@@ -1,5 +1,5 @@
 import { ApplicationEvent, EventHandler } from './event.types';
-import { logger } from '../logger/logger';
+import { logging } from '../logger';
 
 /**
  * In-memory Event Bus
@@ -58,14 +58,11 @@ export class InMemoryEventBus implements IEventBus {
 
   async publish(event: ApplicationEvent): Promise<void> {
     // Log event publication
-    logger.info({
+    logging.eventBus.eventPublished({
       source: event.source,
-      operation: `publish-${event.type}`,
+      eventType: event.type,
       traceId: event.traceId,
-      event: {
-        type: event.type,
-      },
-    }, `Event published: ${event.type}`);
+    });
 
     const handlers = this.subscribers.get(event.type) || [];
 
@@ -75,14 +72,14 @@ export class InMemoryEventBus implements IEventBus {
     );
 
     // Log failures if any
-    results.forEach((result, index) => {
+    results.forEach((result, _) => {
       if (result.status === 'rejected') {
-        logger.error({
+        logging.eventBus.handlerFailed({
           source: event.source,
-          operation: `handle-${event.type}`,
+          eventType: event.type,
           traceId: event.traceId,
           error: result.reason,
-        }, `Event handler ${index} failed for ${event.type}`);
+        });
       }
     });
   }

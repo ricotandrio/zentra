@@ -53,6 +53,8 @@
       ".env.example": "allow",
       ".ssh/**": "deny",
       ".aws/**": "deny",
+      ".azure/**": "deny",
+      ".gcp/**": "deny",
       ".creds/**": "deny",
       ".npmrc": "deny",
       ".git-credentials": "deny",

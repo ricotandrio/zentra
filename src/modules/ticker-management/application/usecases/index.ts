@@ -1,3 +1,3 @@
-export { AddTickerUseCase } from './add-ticker.usecase';
-export { RemoveTickerUseCase } from './remove-ticker.usecase';
-export { GetTickersUseCase } from './get-tickers.usecase';
+export * from './add-ticker.usecase';
+export * from './remove-ticker.usecase';
+export * from './get-tickers.usecase';

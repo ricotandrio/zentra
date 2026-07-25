@@ -1,96 +1,29 @@
-import { Client } from 'discord.js';
-import { env } from '@/shared/config';
-import { logger } from '@/shared/logger';
-import { rotateLogs } from '@/shared/logger/log-rotate';
+import { createRuntime } from '@/shared/runtime';
 import { startExpressApp } from '@/apps/api';
 import { startBot } from '@/apps/bot';
-import { MarketAnalysisJob, MarketAnalysisSubscriber } from '@/modules/market-analysis';
 import { createTickerManagementModule } from '@/modules/ticker-management';
-import { initializeEventBus } from '@/shared/event-bus';
-import { Scheduler } from '@/shared/scheduler';
+import { createMarketAnalysisModule } from '@/modules/market-analysis';
+import { createLlmModule } from '@/modules/llm';
+import { logging } from '@/shared/logger';
 
-
-/**
- * Shared dependencies initialization
- */
-const eventBus = initializeEventBus();
-logger.info('Event bus initialized');
-
-const tickerManagementModule = createTickerManagementModule();
-logger.info('Ticker management module initialized');
-
-const scheduler = new Scheduler();
-logger.info('Scheduler initialized');
-
-let discordClient: Client;
-
-/**
- * Main application entry point
- */
 (async () => {
-  const botToken = env.DISCORD.BOT_TOKEN;
-  const clientId = env.DISCORD.CLIENT_ID;
-  const guildId = env.DISCORD.GUILD_ID;
-  const channelId = env.DISCORD.DISCORD_STANDUP_CHANNEL_ID;
+  const runtime = createRuntime();
 
-  discordClient = await startBot(
-    botToken,
-    clientId,
-    guildId,
-    channelId,
-    eventBus,
-    tickerManagementModule
-  );
-  logger.info('Discord bot started');
+  runtime.registerModule(createTickerManagementModule());
+  runtime.registerModule(createMarketAnalysisModule());
 
-  startExpressApp(env.EXPRESS.PORT, discordClient, eventBus);
-  logger.info('Express API server started');
+  runtime.registerModule(createLlmModule());
 
-  const marketAnalysisJob = new MarketAnalysisJob({
-    eventBus,
-    channelId,
-    traceId: '',
-    tickerManagementModule,
-  });
+  await startBot(runtime);
+  startExpressApp(runtime);
 
-  scheduler.register(marketAnalysisJob);
-  logger.info('Market analysis scheduler initialized');
+  runtime.scheduler.start();
 
-  const subscriber = new MarketAnalysisSubscriber(
-    eventBus,
-    channelId,
-    tickerManagementModule
-  );
-  logger.info('Market analysis subscriber initialized');
+  logging.system.allStarted();
 
-  subscriber.subscribe();
-
-  rotateLogs(env.LOG.HOT_ROTATE, env.LOG.COLD_ROTATE);
-
-  scheduler.register({
-    name: 'log-rotation',
-    schedule: '0 0 * * *',
-    execute: async () => {
-      rotateLogs(env.LOG.HOT_ROTATE, env.LOG.COLD_ROTATE);
-    },
-  });
-
-  logger.info('All systems started (API + Bot + Worker)');
+  process.on('SIGTERM', () => runtime.shutdown());
+  process.on('SIGINT', () => runtime.shutdown());
 })().catch((error) => {
-  logger.error(error, 'Failed to start application');
+  logging.system.startupFailed({ error });
   process.exit(1);
 });
-
-
-/**
- * Graceful shutdown handling
- */
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
-
-function shutdown() {
-  logger.info('Shutting down...');
-  discordClient.destroy();
-  tickerManagementModule.closeDb();
-  process.exit(0);
-}

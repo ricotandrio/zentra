@@ -6,9 +6,10 @@ import * as removeTicker from './commands/remove-ticker.command';
 import * as listTickers from './commands/list-tickers.command';
 import * as marketSummary from './commands/market-summary.command';
 import { IEventBus } from '@/shared/event-bus';
+import { LlmModule } from '@/modules/llm';
 import { registerMarketAnalysisSubscriber, registerMarketSummarySubscriber } from './subscribers';
 import { TickerManagementModule } from '@/modules/ticker-management';
-import { logger } from '@/shared/logger';
+import { Runtime } from '@/shared/runtime';
 
 export interface BotCommandWithDeps {
   data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder;
@@ -35,19 +36,15 @@ export const botCommands: Record<string, BotCommandWithDeps> = {
 export const deployBot = async (
   rest: REST,
   clientId: string,
-  guildId: string
+  guildId: string,
+  runtime: Runtime
 ) => {
   try {
     const body = Object
       .values(botCommands)
       .filter(cmd => {
         if (!cmd || !cmd.data) {
-          logger.error({
-            source: 'bot',
-            operation: 'deploy-commands',
-            error: 'Invalid command detected',
-            metadata: { cmd },
-          }, 'Invalid command detected');
+          runtime.logging.bot.deployCommandsInvalidCommand({ cmd });
           return false;
         }
         return true;
@@ -55,10 +52,7 @@ export const deployBot = async (
       .map(cmd => cmd.data.toJSON());
 
     if (body.length === 0) {
-      logger.warn({
-        source: 'bot',
-        operation: 'deploy-commands',
-      }, 'No bot commands to deploy');
+      runtime.logging.bot.deployCommandsNoCommands();
       return;
     }
 
@@ -67,23 +61,15 @@ export const deployBot = async (
       { body }
     );
 
-    logger.info({
-      source: 'bot',
-      operation: 'deploy-commands',
-      metadata: { commandCount: body.length },
-    }, `Slash commands registered successfully (${body.length} commands)`);
+    runtime.logging.bot.deployCommands({ commandCount: body.length });
   } catch (error) {
-    logger.error({
-      source: 'bot',
-      operation: 'deploy-commands',
-      error,
-    }, 'Error deploying bot commands');
+    runtime.logging.bot.deployCommandsFailed({ error });
   }
 };
 
 const registerHandlers = (
   client: Client,
-  eventBus?: IEventBus,
+  runtime: Runtime,
   tickerManagementModule?: TickerManagementModule
 ) => {
   client.on('messageCreate', async (message) => {
@@ -100,7 +86,8 @@ const registerHandlers = (
       return;
     }
 
-    await handleNaturalLanguageMessage(message, eventBus);
+    const llmModule = runtime.modules.get('llm') as LlmModule | undefined;
+    await handleNaturalLanguageMessage(message, llmModule);
   });
 
   client.on('interactionCreate', async (interaction) => {
@@ -110,14 +97,9 @@ const registerHandlers = (
     if (!command) return;
 
     try {
-      await command.execute(interaction, eventBus, tickerManagementModule);
+      await command.execute(interaction, runtime.eventBus, tickerManagementModule);
     } catch (error) {
-      logger.error({
-        source: 'bot',
-        operation: 'execute-command',
-        metadata: { commandName: interaction.commandName },
-        error,
-      }, `Error executing command: ${interaction.commandName}`);
+      runtime.logging.bot.commandFailed({ commandName: interaction.commandName, error });
       const errorMessage = '❌ An unexpected error occurred while executing this command.';
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({ content: errorMessage, ephemeral: true });
@@ -128,30 +110,21 @@ const registerHandlers = (
   });
 
   client.once('clientReady', () => {
-    logger.info({
-      source: 'bot',
-      operation: 'login',
-      metadata: { tag: client.user?.tag },
-    }, `Bot logged in as ${client.user?.tag}`);
+    const tag = client.user?.tag;
+    if (tag) {
+      runtime.logging.bot.login({ tag });
+    }
   });
 
   client.on('error', (error) => {
-    logger.error({
-      source: 'bot',
-      operation: 'client-error',
-      error,
-    }, 'Discord client error');
+    runtime.logging.bot.clientError({ error });
   });
 };
 
-export const startBot = async (
-  botToken: string,
-  clientId: string,
-  guildId: string,
-  standupChannelId: string,
-  eventBus?: IEventBus,
-  tickerManagementModule?: TickerManagementModule
-): Promise<Client> => {
+export const startBot = async (runtime: Runtime): Promise<void> => {
+  const tickerManagement = runtime.modules.get('tickerManagement') as TickerManagementModule | undefined;
+  const { BOT_TOKEN, CLIENT_ID, GUILD_ID } = runtime.config.DISCORD;
+
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,
@@ -161,23 +134,19 @@ export const startBot = async (
     ],
   });
 
-  const rest = new REST().setToken(botToken);
+  const rest = new REST().setToken(BOT_TOKEN);
 
-  await deployBot(rest, clientId, guildId);
+  await deployBot(rest, CLIENT_ID, GUILD_ID, runtime);
 
-  registerHandlers(client, eventBus, tickerManagementModule);
+  registerHandlers(client, runtime, tickerManagement);
 
-  // Register event bus subscribers for market analysis and summary delivery
-  if (eventBus) {
-    registerMarketAnalysisSubscriber(client, eventBus);
-    registerMarketSummarySubscriber(client, eventBus);
-  }
+  registerMarketAnalysisSubscriber(client, runtime.eventBus);
+  registerMarketSummarySubscriber(client, runtime.eventBus);
 
-  await client.login(botToken);
-  logger.info({
-    source: 'bot',
-    operation: 'startup',
-  }, 'Discord bot started');
+  await client.login(BOT_TOKEN);
+  runtime.logging.bot.startup();
 
-  return client;
+  runtime.onShutdown(() => {
+    client.destroy();
+  });
 };
