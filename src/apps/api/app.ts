@@ -1,31 +1,25 @@
 import express, { Express } from 'express';
-import { logging } from '@/shared/logger';
-import { IEventBus } from '@/shared/event-bus';
+import { Runtime } from '@/shared/runtime';
 import { createHealthRoutes } from './routes/health';
 import { createWorkerRoutes } from './routes/workers';
 import { createLogsRoutes } from './routes/logs';
 import path from 'path';
 
-export const createExpressApp = (
-  eventBus?: IEventBus
-): Express => {
+export const createExpressApp = (runtime: Runtime): Express => {
   const app = express();
   app.use(express.json());
   app.use(createHealthRoutes());
-  app.use('/workers', createWorkerRoutes(eventBus));
+  app.use('/workers', createWorkerRoutes(runtime.eventBus));
   app.use('/logs', createLogsRoutes());
   app.use('/web', express.static(path.join(process.cwd(), 'src/apps/web/public')));
-
   return app;
 };
 
-export const startExpressApp = (
-  port: number,
-  eventBus?: IEventBus
-) => {
-  const app = createExpressApp(eventBus);
+export const startExpressApp = (runtime: Runtime): void => {
+  const app = createExpressApp(runtime);
+  const port = runtime.config.EXPRESS.PORT;
 
   app.listen(port, () => {
-    logging.api.serverStarted({ port });
+    runtime.logging.api.serverStarted({ port });
   });
 };

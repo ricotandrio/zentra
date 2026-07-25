@@ -8,7 +8,7 @@ import * as marketSummary from './commands/market-summary.command';
 import { IEventBus } from '@/shared/event-bus';
 import { registerMarketAnalysisSubscriber, registerMarketSummarySubscriber } from './subscribers';
 import { TickerManagementModule } from '@/modules/ticker-management';
-import { logging } from '@/shared/logger';
+import { Runtime } from '@/shared/runtime';
 
 export interface BotCommandWithDeps {
   data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder;
@@ -35,14 +35,15 @@ export const botCommands: Record<string, BotCommandWithDeps> = {
 export const deployBot = async (
   rest: REST,
   clientId: string,
-  guildId: string
+  guildId: string,
+  runtime: Runtime
 ) => {
   try {
     const body = Object
       .values(botCommands)
       .filter(cmd => {
         if (!cmd || !cmd.data) {
-          logging.bot.deployCommandsInvalidCommand({ cmd });
+          runtime.logging.bot.deployCommandsInvalidCommand({ cmd });
           return false;
         }
         return true;
@@ -50,7 +51,7 @@ export const deployBot = async (
       .map(cmd => cmd.data.toJSON());
 
     if (body.length === 0) {
-      logging.bot.deployCommandsNoCommands();
+      runtime.logging.bot.deployCommandsNoCommands();
       return;
     }
 
@@ -59,15 +60,15 @@ export const deployBot = async (
       { body }
     );
 
-    logging.bot.deployCommands({ commandCount: body.length });
+    runtime.logging.bot.deployCommands({ commandCount: body.length });
   } catch (error) {
-    logging.bot.deployCommandsFailed({ error });
+    runtime.logging.bot.deployCommandsFailed({ error });
   }
 };
 
 const registerHandlers = (
   client: Client,
-  eventBus?: IEventBus,
+  runtime: Runtime,
   tickerManagementModule?: TickerManagementModule
 ) => {
   client.on('messageCreate', async (message) => {
@@ -84,7 +85,7 @@ const registerHandlers = (
       return;
     }
 
-    await handleNaturalLanguageMessage(message, eventBus);
+    await handleNaturalLanguageMessage(message, runtime.eventBus);
   });
 
   client.on('interactionCreate', async (interaction) => {
@@ -94,9 +95,9 @@ const registerHandlers = (
     if (!command) return;
 
     try {
-      await command.execute(interaction, eventBus, tickerManagementModule);
+      await command.execute(interaction, runtime.eventBus, tickerManagementModule);
     } catch (error) {
-      logging.bot.commandFailed({ commandName: interaction.commandName, error });
+      runtime.logging.bot.commandFailed({ commandName: interaction.commandName, error });
       const errorMessage = '❌ An unexpected error occurred while executing this command.';
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({ content: errorMessage, ephemeral: true });
@@ -109,23 +110,19 @@ const registerHandlers = (
   client.once('clientReady', () => {
     const tag = client.user?.tag;
     if (tag) {
-      logging.bot.login({ tag });
+      runtime.logging.bot.login({ tag });
     }
   });
 
   client.on('error', (error) => {
-    logging.bot.clientError({ error });
+    runtime.logging.bot.clientError({ error });
   });
 };
 
-export const startBot = async (
-  botToken: string,
-  clientId: string,
-  guildId: string,
-  standupChannelId: string,
-  eventBus?: IEventBus,
-  tickerManagementModule?: TickerManagementModule
-): Promise<Client> => {
+export const startBot = async (runtime: Runtime): Promise<void> => {
+  const tickerManagement = runtime.modules.get('tickerManagement') as TickerManagementModule | undefined;
+  const { BOT_TOKEN, CLIENT_ID, GUILD_ID } = runtime.config.DISCORD;
+
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,
@@ -135,20 +132,19 @@ export const startBot = async (
     ],
   });
 
-  const rest = new REST().setToken(botToken);
+  const rest = new REST().setToken(BOT_TOKEN);
 
-  await deployBot(rest, clientId, guildId);
+  await deployBot(rest, CLIENT_ID, GUILD_ID, runtime);
 
-  registerHandlers(client, eventBus, tickerManagementModule);
+  registerHandlers(client, runtime, tickerManagement);
 
-  // Register event bus subscribers for market analysis and summary delivery
-  if (eventBus) {
-    registerMarketAnalysisSubscriber(client, eventBus);
-    registerMarketSummarySubscriber(client, eventBus);
-  }
+  registerMarketAnalysisSubscriber(client, runtime.eventBus);
+  registerMarketSummarySubscriber(client, runtime.eventBus);
 
-  await client.login(botToken);
-  logging.bot.startup();
+  await client.login(BOT_TOKEN);
+  runtime.logging.bot.startup();
 
-  return client;
+  runtime.onShutdown(() => {
+    client.destroy();
+  });
 };
