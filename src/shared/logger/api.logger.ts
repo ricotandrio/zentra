@@ -1,5 +1,5 @@
 import { Logger } from 'pino';
-import { ResponseInfo } from './logging.service';
+import { RequestInfo, ResponseInfo } from './logging.service';
 
 export const createApiLogger = (logger: Logger) => {
   return {
