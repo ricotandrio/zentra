@@ -3,6 +3,7 @@ import { startExpressApp } from '@/apps/api';
 import { startBot } from '@/apps/bot';
 import { createTickerManagementModule } from '@/modules/ticker-management';
 import { createMarketAnalysisModule } from '@/modules/market-analysis';
+import { createLlmModule } from '@/modules/llm';
 import { logging } from '@/shared/logger';
 
 (async () => {
@@ -10,6 +11,8 @@ import { logging } from '@/shared/logger';
 
   runtime.registerModule(createTickerManagementModule());
   runtime.registerModule(createMarketAnalysisModule());
+
+  runtime.registerModule(createLlmModule());
 
   await startBot(runtime);
   startExpressApp(runtime);

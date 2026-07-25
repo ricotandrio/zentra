@@ -1,25 +1,31 @@
 import { Message } from 'discord.js';
 import { logging } from '@/shared/logger';
-import { IEventBus } from '@/shared/event-bus';
+import { LlmModule } from '@/modules/llm';
 
-/**
- * Natural language message handler
- * TODO: Replace echo with LLM orchestration
- */
 export const handleNaturalLanguageMessage = async (
   message: Message,
-  _eventBus?: IEventBus
+  llmModule?: LlmModule
 ) => {
-  try {
-    // TODO: Implement LLM-based intent routing
-    // For now, just echo back the user's message
-    const content = message.content.replace(/<@!?(\d+)>/, '').trim();
-    const response = `You said: ${content}`;
+  const content = message.content.replace(/<@!?(\d+)>/, '').trim();
 
-    await message.reply(response);
-    logging.bot.messageHandled({ userId: message.author.id, contentLength: content.length });
+  try {
+    logging.llm.messageReceived({ userId: message.author.id });
+
+    if (!llmModule) {
+      await message.reply('LLM module is not available.');
+      return;
+    }
+
+    const response = await llmModule.generate.execute(content);
+    if (response.length > 2000) {
+      await message.reply(response.substring(0, 1997) + '...');
+    } else {
+      await message.reply(response);
+    }
+
+    logging.llm.responseGenerated({ promptLength: content.length, responseLength: response.length });
   } catch (error) {
-    logging.bot.messageFailed({ userId: message.author.id, error });
+    logging.llm.responseFailed({ error });
     await message.reply('Sorry, I encountered an error processing your message.');
   }
 };

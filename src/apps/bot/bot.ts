@@ -6,6 +6,7 @@ import * as removeTicker from './commands/remove-ticker.command';
 import * as listTickers from './commands/list-tickers.command';
 import * as marketSummary from './commands/market-summary.command';
 import { IEventBus } from '@/shared/event-bus';
+import { LlmModule } from '@/modules/llm';
 import { registerMarketAnalysisSubscriber, registerMarketSummarySubscriber } from './subscribers';
 import { TickerManagementModule } from '@/modules/ticker-management';
 import { Runtime } from '@/shared/runtime';
@@ -85,7 +86,8 @@ const registerHandlers = (
       return;
     }
 
-    await handleNaturalLanguageMessage(message, runtime.eventBus);
+    const llmModule = runtime.modules.get('llm') as LlmModule | undefined;
+    await handleNaturalLanguageMessage(message, llmModule);
   });
 
   client.on('interactionCreate', async (interaction) => {
