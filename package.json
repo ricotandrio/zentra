@@ -38,6 +38,7 @@
     "@types/node": "^25.6.0",
     "@types/node-cron": "^3.0.11",
     "@types/supertest": "^6.0.2",
+    "@types/turndown": "^5.0.6",
     "@typescript-eslint/eslint-plugin": "^8.59.1",
     "@typescript-eslint/parser": "^8.59.1",
     "dotenv-cli": "^7.4.2",
@@ -63,6 +64,7 @@
     "pino": "^8.17.2",
     "pino-pretty": "^10.3.1",
     "playwright": "^1.60.0",
+    "turndown": "^7.2.4",
     "typescript-eslint": "^8.59.1",
     "yahoo-finance2": "^3.14.0"
   }
