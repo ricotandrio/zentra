@@ -32,8 +32,9 @@ export class SummarizeContentUseCase {
         : markdown;
 
     const prompt = [
-      'Summarize the following article content in concise, well-structured markdown.',
-      'Highlight the key points and end with a short main takeaway.',
+      'Ringkaslah artikel berikut dalam Bahasa Indonesia dengan maksimal 10 poin penting.',
+      'Setiap poin harus dalam format: 1. Diberitakan bahwa ...',
+      'Fokus pada informasi utama dan akhirkan dengan kesimpulan singkat.',
       '',
       '---',
       '',
