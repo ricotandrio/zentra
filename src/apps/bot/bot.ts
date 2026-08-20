@@ -12,6 +12,7 @@ import { ContentSummaryModule } from '@/modules/content-summary';
 import { registerMarketAnalysisSubscriber, registerMarketSummarySubscriber } from './subscribers';
 import { TickerManagementModule } from '@/modules/ticker-management';
 import { Runtime } from '@/shared/runtime';
+import { env } from '@/shared/config';
 
 export interface BotCommandWithDeps {
   data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder;
@@ -28,13 +29,32 @@ export interface BotCommand extends BotCommandWithDeps {
   execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
 }
 
-export const botCommands: Record<string, BotCommandWithDeps> = {
+const allBotCommands: Record<string, BotCommandWithDeps> = {
   ping: ping as BotCommand,
   'add-ticker': addTicker as BotCommandWithDeps,
   'remove-ticker': removeTicker as BotCommandWithDeps,
   'list-tickers': listTickers as BotCommandWithDeps,
   'market-summary': marketSummary as BotCommandWithDeps,
   summarize: summarize as BotCommandWithDeps,
+};
+
+const commandFeatureFlags: Record<string, keyof typeof env.FEATURES> = {
+  ping: 'COMMAND_PING',
+  'add-ticker': 'COMMAND_ADD_TICKER',
+  'remove-ticker': 'COMMAND_REMOVE_TICKER',
+  'list-tickers': 'COMMAND_LIST_TICKERS',
+  'market-summary': 'COMMAND_MARKET_SUMMARY',
+  summarize: 'COMMAND_SUMMARIZE',
+};
+
+const getEnabledCommands = (runtime: Runtime): Record<string, BotCommandWithDeps> => {
+  const features = runtime.config.FEATURES;
+  return Object.fromEntries(
+    Object.entries(allBotCommands).filter(([name]) => {
+      const flag = commandFeatureFlags[name];
+      return flag ? features[flag] : true;
+    })
+  );
 };
 
 export const deployBot = async (
@@ -44,8 +64,10 @@ export const deployBot = async (
   runtime: Runtime
 ) => {
   try {
+    const enabledCommands = getEnabledCommands(runtime);
+
     const body = Object
-      .values(botCommands)
+      .values(enabledCommands)
       .filter(cmd => {
         if (!cmd || !cmd.data) {
           runtime.logging.bot.deployCommandsInvalidCommand({ cmd });
@@ -77,6 +99,8 @@ const registerHandlers = (
   tickerManagementModule?: TickerManagementModule,
   contentSummaryModule?: ContentSummaryModule
 ) => {
+  const enabledCommands = getEnabledCommands(runtime);
+
   client.on('messageCreate', async (message) => {
     if (
       message.author.bot ||
@@ -98,7 +122,7 @@ const registerHandlers = (
   client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
-    const command = botCommands[interaction.commandName];
+    const command = enabledCommands[interaction.commandName];
     if (!command) return;
 
     try {
