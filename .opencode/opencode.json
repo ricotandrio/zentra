@@ -26,7 +26,7 @@
       "diskutil *": "deny",
       "mount *": "ask",
       "umount *": "ask",
-      "rm -rf *": "deny",
+      "rm -rf *": "ask",
       "rm *": "ask",
       "chmod *": "ask",
       "chown *": "deny",

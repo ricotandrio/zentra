@@ -36,6 +36,14 @@ services:
       
       # API configuration
       - API_BASE_URL=${API_BASE_URL:-http://localhost:3000}
+      
+      # Feature flags — Discord commands
+      - FEATURE_COMMAND_PING=${FEATURE_COMMAND_PING:-true}
+      - FEATURE_COMMAND_ADD_TICKER=${FEATURE_COMMAND_ADD_TICKER:-true}
+      - FEATURE_COMMAND_REMOVE_TICKER=${FEATURE_COMMAND_REMOVE_TICKER:-true}
+      - FEATURE_COMMAND_LIST_TICKERS=${FEATURE_COMMAND_LIST_TICKERS:-true}
+      - FEATURE_COMMAND_MARKET_SUMMARY=${FEATURE_COMMAND_MARKET_SUMMARY:-true}
+      - FEATURE_COMMAND_SUMMARIZE=${FEATURE_COMMAND_SUMMARIZE:-true}
     
     restart: unless-stopped
     networks:
