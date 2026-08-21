@@ -4,6 +4,7 @@ import { startBot } from '@/apps/bot';
 import { createTickerManagementModule } from '@/modules/ticker-management';
 import { createMarketAnalysisModule } from '@/modules/market-analysis';
 import { createLlmModule } from '@/modules/llm';
+import { createContentSummaryModule, ContentSummaryModule } from '@/modules/content-summary';
 import { logging } from '@/shared/logger';
 
 (async () => {
@@ -13,8 +14,10 @@ import { logging } from '@/shared/logger';
   runtime.registerModule(createMarketAnalysisModule());
 
   runtime.registerModule(createLlmModule());
+  runtime.registerModule(createContentSummaryModule());
 
-  await startBot(runtime);
+  const contentSummaryModule = runtime.modules.get('contentSummary') as ContentSummaryModule | undefined;
+  await startBot(runtime, contentSummaryModule);
   startExpressApp(runtime);
 
   runtime.scheduler.start();

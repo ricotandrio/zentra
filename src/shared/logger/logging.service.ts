@@ -8,6 +8,7 @@ import { createSchedulerLogger } from './scheduler.logger';
 import { createMarketAnalysisLogger } from './market-analysis.logger';
 import { createLlmLogger } from './llm.logger';
 import { createInfraLogger } from './infra.logger';
+import { createContentSummaryLogger } from './content-summary.logger';
 
 export interface RequestInfo {
   method?: string;
@@ -32,6 +33,7 @@ export class LoggingService {
   readonly system;
   readonly llm;
   readonly infra;
+  readonly contentSummary;
 
   constructor(logger: Logger = defaultLogger) {
     this.logger = logger;
@@ -43,6 +45,7 @@ export class LoggingService {
     this.system = createSystemLogger(this.logger);
     this.llm = createLlmLogger(this.logger);
     this.infra = createInfraLogger(this.logger);
+    this.contentSummary = createContentSummaryLogger(this.logger);
   }
 }
 

@@ -5,18 +5,22 @@ import * as addTicker from './commands/add-ticker.command';
 import * as removeTicker from './commands/remove-ticker.command';
 import * as listTickers from './commands/list-tickers.command';
 import * as marketSummary from './commands/market-summary.command';
+import * as summarize from './commands/summarize.command';
 import { IEventBus } from '@/shared/event-bus';
 import { LlmModule } from '@/modules/llm';
+import { ContentSummaryModule } from '@/modules/content-summary';
 import { registerMarketAnalysisSubscriber, registerMarketSummarySubscriber } from './subscribers';
 import { TickerManagementModule } from '@/modules/ticker-management';
 import { Runtime } from '@/shared/runtime';
+import { env } from '@/shared/config';
 
 export interface BotCommandWithDeps {
   data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder;
   execute: (
     interaction: ChatInputCommandInteraction,
     eventBus?: IEventBus,
-    tickerManagementModule?: TickerManagementModule
+    tickerManagementModule?: TickerManagementModule,
+    contentSummaryModule?: ContentSummaryModule
   ) => Promise<void>;
   autocomplete?: (interaction: AutocompleteInteraction) => Promise<void>;
 }
@@ -25,12 +29,32 @@ export interface BotCommand extends BotCommandWithDeps {
   execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
 }
 
-export const botCommands: Record<string, BotCommandWithDeps> = {
+const allBotCommands: Record<string, BotCommandWithDeps> = {
   ping: ping as BotCommand,
   'add-ticker': addTicker as BotCommandWithDeps,
   'remove-ticker': removeTicker as BotCommandWithDeps,
   'list-tickers': listTickers as BotCommandWithDeps,
   'market-summary': marketSummary as BotCommandWithDeps,
+  summarize: summarize as BotCommandWithDeps,
+};
+
+const commandFeatureFlags: Record<string, keyof typeof env.FEATURES> = {
+  ping: 'COMMAND_PING',
+  'add-ticker': 'COMMAND_ADD_TICKER',
+  'remove-ticker': 'COMMAND_REMOVE_TICKER',
+  'list-tickers': 'COMMAND_LIST_TICKERS',
+  'market-summary': 'COMMAND_MARKET_SUMMARY',
+  summarize: 'COMMAND_SUMMARIZE',
+};
+
+const getEnabledCommands = (runtime: Runtime): Record<string, BotCommandWithDeps> => {
+  const features = runtime.config.FEATURES;
+  return Object.fromEntries(
+    Object.entries(allBotCommands).filter(([name]) => {
+      const flag = commandFeatureFlags[name];
+      return flag ? features[flag] : true;
+    })
+  );
 };
 
 export const deployBot = async (
@@ -40,8 +64,10 @@ export const deployBot = async (
   runtime: Runtime
 ) => {
   try {
+    const enabledCommands = getEnabledCommands(runtime);
+
     const body = Object
-      .values(botCommands)
+      .values(enabledCommands)
       .filter(cmd => {
         if (!cmd || !cmd.data) {
           runtime.logging.bot.deployCommandsInvalidCommand({ cmd });
@@ -70,8 +96,11 @@ export const deployBot = async (
 const registerHandlers = (
   client: Client,
   runtime: Runtime,
-  tickerManagementModule?: TickerManagementModule
+  tickerManagementModule?: TickerManagementModule,
+  contentSummaryModule?: ContentSummaryModule
 ) => {
+  const enabledCommands = getEnabledCommands(runtime);
+
   client.on('messageCreate', async (message) => {
     if (
       message.author.bot ||
@@ -93,11 +122,11 @@ const registerHandlers = (
   client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
-    const command = botCommands[interaction.commandName];
+    const command = enabledCommands[interaction.commandName];
     if (!command) return;
 
     try {
-      await command.execute(interaction, runtime.eventBus, tickerManagementModule);
+      await command.execute(interaction, runtime.eventBus, tickerManagementModule, contentSummaryModule);
     } catch (error) {
       runtime.logging.bot.commandFailed({ commandName: interaction.commandName, error });
       const errorMessage = '❌ An unexpected error occurred while executing this command.';
@@ -121,7 +150,10 @@ const registerHandlers = (
   });
 };
 
-export const startBot = async (runtime: Runtime): Promise<void> => {
+export const startBot = async (
+  runtime: Runtime,
+  contentSummaryModule?: ContentSummaryModule
+): Promise<void> => {
   const tickerManagement = runtime.modules.get('tickerManagement') as TickerManagementModule | undefined;
   const { BOT_TOKEN, CLIENT_ID, GUILD_ID } = runtime.config.DISCORD;
 
@@ -138,7 +170,7 @@ export const startBot = async (runtime: Runtime): Promise<void> => {
 
   await deployBot(rest, CLIENT_ID, GUILD_ID, runtime);
 
-  registerHandlers(client, runtime, tickerManagement);
+  registerHandlers(client, runtime, tickerManagement, contentSummaryModule);
 
   registerMarketAnalysisSubscriber(client, runtime.eventBus);
   registerMarketSummarySubscriber(client, runtime.eventBus);

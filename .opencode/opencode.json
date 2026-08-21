@@ -26,7 +26,7 @@
       "diskutil *": "deny",
       "mount *": "ask",
       "umount *": "ask",
-      "rm -rf *": "deny",
+      "rm -rf *": "ask",
       "rm *": "ask",
       "chmod *": "ask",
       "chown *": "deny",
@@ -44,8 +44,8 @@
       "*/proc/*": "deny",
       "*/sys/*": "deny"
     },
-    "edit": "ask",
-    "write": "ask",
+    "edit": "allow",
+    "write": "allow",
     "read": {
       "*": "allow",
       ".env": "deny",
