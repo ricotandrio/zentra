@@ -44,8 +44,8 @@
       "*/proc/*": "deny",
       "*/sys/*": "deny"
     },
-    "edit": "ask",
-    "write": "ask",
+    "edit": "allow",
+    "write": "allow",
     "read": {
       "*": "allow",
       ".env": "deny",
