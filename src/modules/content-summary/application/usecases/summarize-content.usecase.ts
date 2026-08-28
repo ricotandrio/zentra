@@ -32,7 +32,7 @@ export class SummarizeContentUseCase {
         : markdown;
 
     const prompt = [
-      'Ringkaslah artikel berikut dalam Bahasa Indonesia dengan maksimal 10 poin penting.',
+      'Ringkaslah artikel berikut dalam Bahasa Indonesia dengan maksimal 5 poin penting.',
       'Setiap poin harus dalam format: 1. Diberitakan bahwa ...',
       'Fokus pada informasi utama dan akhirkan dengan kesimpulan singkat.',
       '',
