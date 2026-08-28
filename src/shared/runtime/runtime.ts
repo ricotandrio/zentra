@@ -15,7 +15,7 @@ export interface Runtime {
   config: typeof env;
   logging: LoggingService;
   modules: Map<string, unknown>;
-  registerModule(module: Module): void;
+  registerModule(module: Module): Promise<void>;
   onShutdown(handler: () => Promise<void> | void): void;
   shutdown(): Promise<void>;
 }
@@ -33,8 +33,8 @@ export function createRuntime(): Runtime {
     logging,
     modules: new Map(),
 
-    registerModule(module: Module) {
-      module.register(runtime);
+    async registerModule(module: Module) {
+      await module.register(runtime);
       registeredModules.push(module);
     },
 

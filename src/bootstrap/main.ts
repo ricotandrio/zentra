@@ -5,16 +5,18 @@ import { createTickerManagementModule } from '@/modules/ticker-management';
 import { createMarketAnalysisModule } from '@/modules/market-analysis';
 import { createLlmModule } from '@/modules/llm';
 import { createContentSummaryModule, ContentSummaryModule } from '@/modules/content-summary';
+import { createScheduledQueriesModule } from '@/modules/scheduled-queries';
 import { logging } from '@/shared/logger';
 
 (async () => {
   const runtime = createRuntime();
 
-  runtime.registerModule(createTickerManagementModule());
-  runtime.registerModule(createMarketAnalysisModule());
+  await runtime.registerModule(createTickerManagementModule());
+  await runtime.registerModule(createMarketAnalysisModule());
 
-  runtime.registerModule(createLlmModule());
-  runtime.registerModule(createContentSummaryModule());
+  await runtime.registerModule(createLlmModule());
+  await runtime.registerModule(createContentSummaryModule());
+  await runtime.registerModule(createScheduledQueriesModule());
 
   const contentSummaryModule = runtime.modules.get('contentSummary') as ContentSummaryModule | undefined;
   await startBot(runtime, contentSummaryModule);

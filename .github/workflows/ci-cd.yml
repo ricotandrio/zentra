@@ -215,6 +215,9 @@ jobs:
             echo "FEATURE_COMMAND_LIST_TICKERS=${{ vars.FEATURE_COMMAND_LIST_TICKERS || 'true' }}" >> .env
             echo "FEATURE_COMMAND_MARKET_SUMMARY=${{ vars.FEATURE_COMMAND_MARKET_SUMMARY || 'true' }}" >> .env
             echo "FEATURE_COMMAND_SUMMARIZE=${{ vars.FEATURE_COMMAND_SUMMARIZE || 'true' }}" >> .env
+            echo "FEATURE_COMMAND_QUERIES=${{ vars.FEATURE_COMMAND_QUERIES || 'true' }}" >> .env
+            echo "FEATURE_COMMAND_USE_QUERY=${{ vars.FEATURE_COMMAND_USE_QUERY || 'true' }}" >> .env
+            echo "POSTGRESQL_URL=${{ secrets.POSTGRESQL_URL }}" >> .env
 
             echo 'Sync complete'
           EOF

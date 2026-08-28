@@ -6,9 +6,12 @@ import * as removeTicker from './commands/remove-ticker.command';
 import * as listTickers from './commands/list-tickers.command';
 import * as marketSummary from './commands/market-summary.command';
 import * as summarize from './commands/summarize.command';
+import * as queries from './commands/queries.command';
+import * as useQuery from './commands/use-query.command';
 import { IEventBus } from '@/shared/event-bus';
 import { LlmModule } from '@/modules/llm';
 import { ContentSummaryModule } from '@/modules/content-summary';
+import { ScheduledQueriesModule } from '@/modules/scheduled-queries';
 import { registerMarketAnalysisSubscriber, registerMarketSummarySubscriber } from './subscribers';
 import { TickerManagementModule } from '@/modules/ticker-management';
 import { Runtime } from '@/shared/runtime';
@@ -20,7 +23,8 @@ export interface BotCommandWithDeps {
     interaction: ChatInputCommandInteraction,
     eventBus?: IEventBus,
     tickerManagementModule?: TickerManagementModule,
-    contentSummaryModule?: ContentSummaryModule
+    contentSummaryModule?: ContentSummaryModule,
+    scheduledQueriesModule?: ScheduledQueriesModule
   ) => Promise<void>;
   autocomplete?: (interaction: AutocompleteInteraction) => Promise<void>;
 }
@@ -36,6 +40,8 @@ const allBotCommands: Record<string, BotCommandWithDeps> = {
   'list-tickers': listTickers as BotCommandWithDeps,
   'market-summary': marketSummary as BotCommandWithDeps,
   summarize: summarize as BotCommandWithDeps,
+  queries: queries as BotCommandWithDeps,
+  'use-query': useQuery as BotCommandWithDeps,
 };
 
 const commandFeatureFlags: Record<string, keyof typeof env.FEATURES> = {
@@ -45,6 +51,8 @@ const commandFeatureFlags: Record<string, keyof typeof env.FEATURES> = {
   'list-tickers': 'COMMAND_LIST_TICKERS',
   'market-summary': 'COMMAND_MARKET_SUMMARY',
   summarize: 'COMMAND_SUMMARIZE',
+  queries: 'COMMAND_QUERIES',
+  'use-query': 'COMMAND_USE_QUERY',
 };
 
 const getEnabledCommands = (runtime: Runtime): Record<string, BotCommandWithDeps> => {
@@ -97,7 +105,8 @@ const registerHandlers = (
   client: Client,
   runtime: Runtime,
   tickerManagementModule?: TickerManagementModule,
-  contentSummaryModule?: ContentSummaryModule
+  contentSummaryModule?: ContentSummaryModule,
+  scheduledQueriesModule?: ScheduledQueriesModule
 ) => {
   const enabledCommands = getEnabledCommands(runtime);
 
@@ -126,7 +135,7 @@ const registerHandlers = (
     if (!command) return;
 
     try {
-      await command.execute(interaction, runtime.eventBus, tickerManagementModule, contentSummaryModule);
+      await command.execute(interaction, runtime.eventBus, tickerManagementModule, contentSummaryModule, scheduledQueriesModule);
     } catch (error) {
       runtime.logging.bot.commandFailed({ commandName: interaction.commandName, error });
       const errorMessage = '❌ An unexpected error occurred while executing this command.';
@@ -155,6 +164,7 @@ export const startBot = async (
   contentSummaryModule?: ContentSummaryModule
 ): Promise<void> => {
   const tickerManagement = runtime.modules.get('tickerManagement') as TickerManagementModule | undefined;
+  const scheduledQueries = runtime.modules.get('scheduledQueries') as ScheduledQueriesModule | undefined;
   const { BOT_TOKEN, CLIENT_ID, GUILD_ID } = runtime.config.DISCORD;
 
   const client = new Client({
@@ -170,7 +180,7 @@ export const startBot = async (
 
   await deployBot(rest, CLIENT_ID, GUILD_ID, runtime);
 
-  registerHandlers(client, runtime, tickerManagement, contentSummaryModule);
+  registerHandlers(client, runtime, tickerManagement, contentSummaryModule, scheduledQueries);
 
   registerMarketAnalysisSubscriber(client, runtime.eventBus);
   registerMarketSummarySubscriber(client, runtime.eventBus);
