@@ -10,3 +10,4 @@ process.env.LLM_PROVIDER_NAME = 'gemini';
 process.env.LLM_MODEL_NAME = 'gemini-2.0-flash';
 process.env.API_BASE_URL = 'http://localhost:3000';
 process.env.TRADING_SUMMARY_URL = 'http://localhost:3000';
+process.env.POSTGRESQL_URL = 'postgresql://user:password@localhost:5432/testdb';
