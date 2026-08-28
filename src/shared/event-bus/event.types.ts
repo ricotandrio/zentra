@@ -106,6 +106,20 @@ export interface TickerRemovedEvent extends DomainEvent {
   };
 }
 
+/**
+ * Heartbeat tick fired periodically to keep the VM alive.
+ * Published by: Worker scheduler
+ * Subscribed by: Bot (to send a keepalive message to Discord)
+ */
+export interface HeartbeatTickEvent extends DomainEvent {
+  type: 'heartbeat:tick';
+  source: 'worker';
+  data: {
+    channelId: string;
+    timestamp: string;
+  };
+}
+
 // Union type of all events
 export type ApplicationEvent =
   | WorkerMarketAnalysisTriggerEvent
@@ -113,7 +127,8 @@ export type ApplicationEvent =
   | MarketAnalysisErrorEvent
   | MarketSummaryCompleteEvent
   | TickerAddedEvent
-  | TickerRemovedEvent;
+  | TickerRemovedEvent
+  | HeartbeatTickEvent;
 
 // Type-safe event handler
 export type EventHandler<T extends ApplicationEvent = ApplicationEvent> = (
