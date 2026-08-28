@@ -7,6 +7,7 @@ import { createLlmModule } from '@/modules/llm';
 import { createContentSummaryModule, ContentSummaryModule } from '@/modules/content-summary';
 import { createScheduledQueriesModule } from '@/modules/scheduled-queries';
 import { logging } from '@/shared/logger';
+import { generateTraceId } from '@/shared/utils';
 
 (async () => {
   const runtime = createRuntime();
@@ -20,6 +21,9 @@ import { logging } from '@/shared/logger';
 
   const contentSummaryModule = runtime.modules.get('contentSummary') as ContentSummaryModule | undefined;
   await startBot(runtime, contentSummaryModule);
+
+  registerHeartbeatJob(runtime);
+
   startExpressApp(runtime);
 
   runtime.scheduler.start();
@@ -32,3 +36,25 @@ import { logging } from '@/shared/logger';
   logging.system.startupFailed({ error });
   process.exit(1);
 });
+
+function registerHeartbeatJob(runtime: ReturnType<typeof createRuntime>): void {
+  const channelId = runtime.config.DISCORD.DISCORD_STANDUP_CHANNEL_ID;
+
+  runtime.scheduler.register({
+    name: 'heartbeat',
+    schedule: '*/30 * * * *',
+    execute: async () => {
+      const traceId = generateTraceId();
+      await runtime.eventBus.publish({
+        type: 'heartbeat:tick',
+        source: 'worker',
+        timestamp: new Date(),
+        traceId,
+        data: {
+          channelId,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    },
+  });
+}

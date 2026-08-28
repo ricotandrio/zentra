@@ -12,7 +12,7 @@ import { IEventBus } from '@/shared/event-bus';
 import { LlmModule } from '@/modules/llm';
 import { ContentSummaryModule } from '@/modules/content-summary';
 import { ScheduledQueriesModule } from '@/modules/scheduled-queries';
-import { registerMarketAnalysisSubscriber, registerMarketSummarySubscriber } from './subscribers';
+import { registerHeartbeatSubscriber, registerMarketAnalysisSubscriber, registerMarketSummarySubscriber } from './subscribers';
 import { TickerManagementModule } from '@/modules/ticker-management';
 import { Runtime } from '@/shared/runtime';
 import { env } from '@/shared/config';
@@ -184,6 +184,7 @@ export const startBot = async (
 
   registerMarketAnalysisSubscriber(client, runtime.eventBus);
   registerMarketSummarySubscriber(client, runtime.eventBus);
+  registerHeartbeatSubscriber(client, runtime.eventBus);
 
   await client.login(BOT_TOKEN);
   runtime.logging.bot.startup();

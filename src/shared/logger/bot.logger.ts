@@ -148,5 +148,26 @@ export const createBotLogger = (logger: Logger) => {
         'Error handling market summary event in bot'
       );
     },
+
+    heartbeatDelivered: (params: { traceId: string; channelId: string }) => {
+      logger.info(
+        { source: 'bot', operation: 'deliver-heartbeat', traceId: params.traceId, metadata: { channelId: params.channelId } },
+        'Heartbeat delivered to Discord'
+      );
+    },
+
+    heartbeatInvalidChannel: (params: { traceId: string; channelId: string }) => {
+      logger.error(
+        { source: 'bot', operation: 'deliver-heartbeat', traceId: params.traceId, metadata: { channelId: params.channelId }, error: 'Invalid channel: not a text channel' },
+        'Invalid channel: not a text channel'
+      );
+    },
+
+    heartbeatDeliveryFailed: (params: { traceId: string; error: unknown }) => {
+      logger.error(
+        { source: 'bot', operation: 'deliver-heartbeat', traceId: params.traceId, error: params.error },
+        'Error handling heartbeat event in bot'
+      );
+    },
   };
 };
