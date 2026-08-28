@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { IGeminiPort } from '@/modules/llm/application/contracts/llm.port';
+import { logging } from '@/shared/logger';
 
 export class GeminiAdapter implements IGeminiPort {
   private client: GoogleGenAI;
@@ -11,11 +12,23 @@ export class GeminiAdapter implements IGeminiPort {
   }
 
   async generate(prompt: string): Promise<string> {
-    const response = await this.client.models.generateContent({
-      model: this.model,
-      contents: prompt,
-    });
+    try {
+      const response = await this.client.models.generateContent({
+        model: this.model,
+        contents: prompt,
+      });
 
-    return response.text ?? '';
+      const text = response.text ?? '';
+
+      logging.llm.responseGenerated({
+        promptLength: prompt.length,
+        responseLength: text.length,
+      });
+
+      return text;
+    } catch (error) {
+      logging.llm.responseFailed({ error });
+      throw error;
+    }
   }
 }
