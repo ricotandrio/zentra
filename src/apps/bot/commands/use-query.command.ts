@@ -3,31 +3,14 @@ import { IEventBus } from '@/shared/event-bus';
 import { TickerManagementModule } from '@/modules/ticker-management';
 import { ContentSummaryModule } from '@/modules/content-summary';
 import { ScheduledQueriesModule } from '@/modules/scheduled-queries';
-import { formatAsMarkdownTable } from '@/modules/scheduled-queries/infrastructure/discord/table-formatter';
+import { markdownTableToPng } from '@/shared/utils';
 
-const MAX_MESSAGE_LENGTH = 2000;
+const buildMarkdownTable = (columns: string[], rows: Record<string, unknown>[]): string => {
+  const header = `| ${columns.join(' | ')} |`;
+  const separator = `| ${columns.map(() => '---').join(' | ')} |`;
+  const dataRows = rows.map((row) => `| ${columns.map((column) => String(row[column] ?? '')).join(' | ')} |`);
 
-const splitIntoChunks = (text: string, maxLength: number): string[] => {
-  if (text.length <= maxLength) return [text];
-
-  const chunks: string[] = [];
-  let remaining = text;
-
-  while (remaining.length > 0) {
-    if (remaining.length <= maxLength) {
-      chunks.push(remaining);
-      break;
-    }
-
-    let cutAt = remaining.lastIndexOf('\n', maxLength);
-    if (cutAt <= 0) cutAt = remaining.lastIndexOf(' ', maxLength);
-    if (cutAt <= 0) cutAt = maxLength;
-
-    chunks.push(remaining.substring(0, cutAt).trimEnd());
-    remaining = remaining.substring(cutAt).trimStart();
-  }
-
-  return chunks;
+  return [header, separator, ...dataRows].join('\n');
 };
 
 export const data = new SlashCommandBuilder()
@@ -55,22 +38,26 @@ export async function execute(
 
   try {
     const result = await scheduledQueriesModule.executeQueryUseCase.execute(id);
-    const table = formatAsMarkdownTable(result.columns, result.rows, 10);
-    const header = `**Query #${id}** — ${result.rows.length} row(s)\n\n`;
-    const fullMessage = header + '```\n' + table + '\n```';
 
-    const chunks = splitIntoChunks(fullMessage, MAX_MESSAGE_LENGTH);
-
-    const first = chunks[0];
-    if (first !== undefined) {
-      await interaction.editReply(first);
+    if (result.rows.length === 0) {
+      await interaction.editReply(`**Query #${id}** — 0 rows returned.`);
+      return;
     }
 
-    for (let i = 1; i < chunks.length; i++) {
-      const chunk = chunks[i];
-      if (chunk !== undefined) {
-        await interaction.followUp(chunk);
-      }
+    const markdownTable = buildMarkdownTable(result.columns, result.rows.slice(0, 10));
+
+    try {
+      const imageBuffer = await markdownTableToPng(markdownTable, { width: 900 });
+
+      await interaction.editReply({
+        content: `**Query #${id}** — ${result.rows.length} row(s)`,
+        files: [{ attachment: imageBuffer, name: `query-${id}.png` }],
+      });
+      return;
+    } catch {
+      // Fallback to a plain message if the renderer fails at runtime.
+      const message = `**Query #${id}** — ${result.rows.length} row(s)\nCould not render PNG preview.`;
+      await interaction.editReply(message);
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
