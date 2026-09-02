@@ -64,6 +64,17 @@ const formatCellValue = (value: string): string => {
   const trimmed = value.trim();
   if (!trimmed) return '';
 
+  const dateLike = trimmed.match(/^\d{4}-\d{2}-\d{2}(?:[T\s].+)?$/);
+  if (dateLike) {
+    const date = new Date(trimmed);
+    if (!Number.isNaN(date.getTime())) {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+  }
+
   const numeric = Number(trimmed.replace(/,/g, ''));
   if (Number.isFinite(numeric) && /\./.test(trimmed)) {
     return numeric.toFixed(1);
@@ -82,11 +93,22 @@ export async function markdownTableToPng(
   const { headers, rows } = parseMarkdownTable(markdown);
 
   const padding = options.padding ?? 18;
-  const baseWidth = options.width ?? Math.max(720, headers.length * 220 + 120);
-  const width = Math.min(baseWidth, 1400);
+  const minColumnWidth = 120;
+  const maxColumnWidth = 260;
 
-  const estimatedHeight = 52 + (rows.length + 1) * 32 + padding * 2;
-  const height = Math.min(Math.max(estimatedHeight, 160), 1600);
+  const columnWidths = headers.map((header, columnIndex) => {
+    const maxCellLength = Math.max(
+      header.length,
+      ...rows.map((row) => String(row[columnIndex] ?? '').length)
+    );
+
+    return Math.min(Math.max(maxCellLength * 8 + 24, minColumnWidth), maxColumnWidth);
+  });
+
+  const tableWidth = Math.min(Math.max(columnWidths.reduce((a, b) => a + b, 0) + 12, options.width ?? 1200), 2000);
+  const width = Math.min(tableWidth, 2000);
+  const estimatedHeight = 52 + (rows.length + 1) * 34 + padding * 2;
+  const height = Math.min(Math.max(estimatedHeight, 220), 400);
 
   const font = getFontData();
   const boldFont = getBoldFontData();
@@ -142,6 +164,7 @@ export async function markdownTableToPng(
             style: {
               display: 'flex',
               flexDirection: 'column',
+              width: '100%',
               borderRadius: '12px',
               overflow: 'hidden',
               border: '1px solid rgba(148, 163, 184, 0.25)',
@@ -163,8 +186,8 @@ export async function markdownTableToPng(
                 {
                   key: `header-${index}`,
                   style: {
-                    flex: '1 1 0',
-                    minWidth: '120px',
+                    width: `${columnWidths[index]}px`,
+                    minWidth: `${columnWidths[index]}px`,
                     padding: '12px 10px',
                     fontWeight: 700,
                     fontSize: '13px',
@@ -198,8 +221,8 @@ export async function markdownTableToPng(
                   {
                     key: `cell-${rowIndex}-${cellIndex}`,
                     style: {
-                      flex: '1 1 0',
-                      minWidth: '120px',
+                      width: `${columnWidths[cellIndex]}px`,
+                      minWidth: `${columnWidths[cellIndex]}px`,
                       padding: '10px 10px',
                       fontSize: '12px',
                       color: '#e2e8f0',
