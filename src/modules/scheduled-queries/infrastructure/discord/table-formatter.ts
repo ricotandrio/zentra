@@ -1,3 +1,33 @@
+const escapeCsvValue = (value: unknown): string => {
+  const raw = String(value ?? '');
+  if (/[",\n]/.test(raw)) {
+    return `"${raw.replace(/"/g, '""')}"`;
+  }
+  return raw;
+};
+
+export function formatAsCsv(
+  columns: string[],
+  rows: Record<string, unknown>[],
+  maxRows: number = 10
+): string {
+  if (columns.length === 0) return 'No data returned.';
+
+  const visibleRows = rows.slice(0, maxRows);
+  const hiddenRows = rows.length - visibleRows.length;
+
+  const lines = [
+    columns.map((column) => escapeCsvValue(column)).join(','),
+    ...visibleRows.map((row) => columns.map((column) => escapeCsvValue(row[column])).join(',')),
+  ];
+
+  if (hiddenRows > 0) {
+    lines.push(`...and ${hiddenRows} more rows`);
+  }
+
+  return lines.join('\n');
+}
+
 export function formatAsMarkdownTable(
   columns: string[],
   rows: Record<string, unknown>[],

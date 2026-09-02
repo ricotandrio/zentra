@@ -57,7 +57,9 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.3.0",
     "@google/genai": "^2.13.0",
+    "@types/react": "^19.2.18",
     "better-sqlite3": "^9.6.0",
     "discord.js": "^14.26.3",
     "express": "^5.2.1",
@@ -66,6 +68,9 @@
     "pino": "^8.17.2",
     "pino-pretty": "^10.3.1",
     "playwright": "^1.60.0",
+    "react": "^19.2.8",
+    "satori": "^0.33.4",
+    "sharp": "^0.35.4",
     "turndown": "^7.2.4",
     "typescript-eslint": "^8.59.1",
     "yahoo-finance2": "^3.14.0"
