@@ -1,5 +1,5 @@
 import { QueryResultExecutor } from '@/modules/common/application/ports/db';
-import { IScheduledQueryRepository } from '../contracts/scheduled-query.repository.port';
+import { IScheduledQueryRepository } from '../../domain/repositories/scheduled-query.repository.port';
 
 export interface ExecuteQueryResult {
   columns: string[];

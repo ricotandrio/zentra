@@ -1,5 +1,5 @@
 import { ScheduledQuery } from '@/modules/scheduled-queries/domain/entities/scheduled-query.entity';
-import { IScheduledQueryRepository } from '../../application/contracts/scheduled-query.repository.port';
+import { IScheduledQueryRepository } from '../../domain/repositories/scheduled-query.repository.port';
 import { QueryExecutor } from '@/modules/common/application/ports';
 
 interface ScheduledQueryRow extends Record<string, unknown> {

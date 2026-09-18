@@ -1,4 +1,4 @@
-import { IScheduledQueryRepository } from '../contracts/scheduled-query.repository.port';
+import { IScheduledQueryRepository } from '../../domain/repositories/scheduled-query.repository.port';
 import { ScheduledQuery } from '@/modules/scheduled-queries/domain/entities/scheduled-query.entity';
 
 export class ListQueriesUseCase {
