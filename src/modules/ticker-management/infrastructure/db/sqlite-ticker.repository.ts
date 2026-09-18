@@ -1,30 +1,42 @@
-import Database from 'better-sqlite3';
 import { Ticker } from '@/modules/ticker-management/domain/entities/ticker.entity';
 import { ITickerRepository } from '@/modules/ticker-management/domain/repositories/ticker.repository';
+import { QueryExecutor } from '@/modules/common/application/ports/db';
 
 export class SqliteTickerRepository implements ITickerRepository {
-  constructor(private db: Database.Database) {}
+  constructor(private readonly db: QueryExecutor) {}
 
   async add(ticker: Ticker): Promise<void> {
     try {
-      const stmt = this.db.prepare(`
-        INSERT INTO tickers (symbol, added_at)
-        VALUES (?, ?)
-      `);
-
-      stmt.run(ticker.symbol, ticker.addedAt.toISOString());
+      await this.db.execute(
+        `
+          INSERT INTO tickers (symbol, added_at)
+          VALUES (?, ?)
+        `,
+        [ticker.symbol, ticker.addedAt.toISOString()]
+      );
     } catch (error) {
-      if (error instanceof Error && error.message.includes('UNIQUE constraint failed')) {
+      if (
+        error instanceof Error &&
+        error.message.includes('UNIQUE constraint failed')
+      ) {
         // eslint-disable-next-line preserve-caught-error
         throw new Error(`Ticker ${ticker.symbol} already exists`);
       }
+
       throw error;
     }
   }
 
   async get(symbol: string): Promise<Ticker | null> {
-    const stmt = this.db.prepare('SELECT symbol, added_at FROM tickers WHERE symbol = ?');
-    const row = stmt.get(symbol) as { symbol: string; added_at: string } | undefined;
+    const rows = await this.db.query<{
+      symbol: string;
+      added_at: string;
+    }>(
+      'SELECT symbol, added_at FROM tickers WHERE symbol = ?',
+      [symbol]
+    );
+
+    const row = rows[0];
 
     if (!row) {
       return null;
@@ -34,16 +46,22 @@ export class SqliteTickerRepository implements ITickerRepository {
   }
 
   async getAll(): Promise<Ticker[]> {
-    const stmt = this.db.prepare('SELECT symbol, added_at FROM tickers ORDER BY added_at DESC');
-    const rows = stmt.all() as Array<{ symbol: string; added_at: string }>;
+    const rows = await this.db.query<{
+      symbol: string;
+      added_at: string;
+    }>(
+      'SELECT symbol, added_at FROM tickers ORDER BY added_at DESC'
+    );
 
     return rows.map(
-      (row) => new Ticker(row.symbol, new Date(row.added_at))
+      row => new Ticker(row.symbol, new Date(row.added_at))
     );
   }
-  
+
   async remove(symbol: string): Promise<void> {
-    const stmt = this.db.prepare('DELETE FROM tickers WHERE symbol = ?');
-    stmt.run(symbol);
+    await this.db.execute(
+      'DELETE FROM tickers WHERE symbol = ?',
+      [symbol]
+    );
   }
 }
