@@ -1,2 +1,2 @@
-export * from './logger';
-export * from './logging.service';
+export * from './core/logger';
+export * from './core/logging.service';

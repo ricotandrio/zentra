@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { logger } from './logger';
+import { logger } from '../core/logger';
 
 const LOG_DIR = path.join(process.cwd(), 'data', 'log');
 

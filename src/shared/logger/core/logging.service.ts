@@ -1,14 +1,14 @@
 import { Logger } from 'pino';
 import { logger as defaultLogger } from './logger';
-import { createApiLogger } from './api.logger';
-import { createSystemLogger } from './system.logger';
-import { createEventBusLogger } from './event-bus.logger';
-import { createBotLogger } from './bot.logger';
-import { createSchedulerLogger } from './scheduler.logger';
-import { createMarketAnalysisLogger } from './market-analysis.logger';
-import { createLlmLogger } from './llm.logger';
-import { createInfraLogger } from './infra.logger';
-import { createContentSummaryLogger } from './content-summary.logger';
+import { createApiLogger } from '../channels/api.logger';
+import { createSystemLogger } from '../channels/system.logger';
+import { createEventBusLogger } from '../channels/event-bus.logger';
+import { createBotLogger } from '../channels/bot.logger';
+import { createSchedulerLogger } from '../channels/scheduler.logger';
+import { createMarketAnalysisLogger } from '../features/market-analysis.logger';
+import { createLlmLogger } from '../features/llm.logger';
+import { createInfraLogger } from '../features/infra.logger';
+import { createContentSummaryLogger } from '../features/content-summary.logger';
 
 export interface RequestInfo {
   method?: string;

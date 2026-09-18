@@ -2,7 +2,7 @@ import { IEventBus, initializeEventBus } from '@/shared/event-bus';
 import { Scheduler } from '@/shared/scheduler';
 import { LoggingService, logging } from '@/shared/logger';
 import { env } from '@/shared/config';
-import { rotateLogs } from '@/shared/logger/log-rotate';
+import { rotateLogs } from '@/shared/logger/maintenance/log-rotate';
 
 export interface Module {
   register(runtime: Runtime): Promise<void> | void;
