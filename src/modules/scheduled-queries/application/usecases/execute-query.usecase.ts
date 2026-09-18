@@ -1,4 +1,4 @@
-import { QueryExecutor } from '@/modules/common/application/ports/db';
+import { QueryResultExecutor } from '@/modules/common/application/ports/db';
 import { IScheduledQueryRepository } from '../contracts/scheduled-query.repository.port';
 
 export interface ExecuteQueryResult {
@@ -9,7 +9,7 @@ export interface ExecuteQueryResult {
 export class ExecuteQueryUseCase {
   constructor(
     private readonly queryRepository: IScheduledQueryRepository,
-    private readonly queryExecutor: QueryExecutor
+    private readonly queryExecutor: QueryResultExecutor
   ) {}
 
   async execute(id: number): Promise<ExecuteQueryResult> {
@@ -18,7 +18,7 @@ export class ExecuteQueryUseCase {
       throw new Error(`Query with id ${id} not found`);
     }
 
-    const result = await this.queryExecutor.execute(query.sqlQuery);
+    const result = await this.queryExecutor.executeQuery(query.sqlQuery);
     await this.queryRepository.updateLastRunAt(id, new Date());
 
     return result;

@@ -3,7 +3,7 @@ import { ModuleHandle, Runtime } from '@/shared/runtime';
 import { PostgresScheduledQueryRepository } from './infrastructure/postgres/scheduled-query.repository';
 import { ListQueriesUseCase } from './application/usecases/list-queries.usecase';
 import { ExecuteQueryUseCase } from './application/usecases/execute-query.usecase';
-import { DatabaseConnection, QueryExecutor } from '../common/application/ports';
+import { DatabaseConnection, QueryExecutor, QueryResultExecutor } from '../common/application/ports';
 import { PostgresAdapter } from '../common';
 
 export interface ScheduledQueriesModule {
@@ -12,7 +12,7 @@ export interface ScheduledQueriesModule {
 }
 
 export function createScheduledQueriesModule(): ModuleHandle<ScheduledQueriesModule> {
-  let pool: DatabaseConnection & QueryExecutor | null = null;
+  let pool: DatabaseConnection & QueryExecutor & QueryResultExecutor | null = null;
   let service: ScheduledQueriesModule | null = null;
 
   return {

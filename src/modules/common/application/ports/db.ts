@@ -13,3 +13,15 @@ export interface QueryExecutor {
     params?: unknown[],
   ): Promise<void>;
 }
+
+export interface QueryResult {
+  columns: string[];
+  rows: Record<string, unknown>[];
+}
+
+export interface QueryResultExecutor {
+  executeQuery(
+    sql: string,
+    params?: unknown[],
+  ): Promise<QueryResult>;
+}
