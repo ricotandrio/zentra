@@ -10,7 +10,7 @@ import * as queries from './commands/queries/queries.command';
 import * as useQuery from './commands/queries/use-query.command';
 import { IEventBus } from '@/shared/event-bus';
 import { ScheduledQueriesModule } from '@/modules/scheduled-queries';
-import { createLlmResponseSubscriber, LlmResponseSubscriber, registerHeartbeatSubscriber, registerMarketAnalysisSubscriber, registerMarketSummarySubscriber } from './subscribers';
+import { createLlmResponseSubscriber, registerHeartbeatSubscriber, registerMarketAnalysisSubscriber, registerMarketSummarySubscriber } from './subscribers';
 import { TickerManagementModule } from '@/modules/ticker-management';
 import { Runtime } from '@/shared/runtime';
 import { config } from '@/shared/config';
@@ -21,8 +21,7 @@ export interface BotCommandWithDeps {
     interaction: ChatInputCommandInteraction,
     eventBus?: IEventBus,
     tickerManagementModule?: TickerManagementModule,
-    scheduledQueriesModule?: ScheduledQueriesModule,
-    llmResponseSubscriber?: LlmResponseSubscriber
+    scheduledQueriesModule?: ScheduledQueriesModule
   ) => Promise<void>;
   autocomplete?: (interaction: AutocompleteInteraction) => Promise<void>;
 }
@@ -107,8 +106,7 @@ export const deployBot = async (
 const registerHandlers = (
   client: Client,
   runtime: Runtime,
-  dependencies: BotDependencies,
-  responseSubscriber: LlmResponseSubscriber
+  dependencies: BotDependencies
 ) => {
   const enabledCommands = getEnabledCommands(runtime);
 
@@ -126,7 +124,7 @@ const registerHandlers = (
       return;
     }
 
-    await handleNaturalLanguageMessage(message, runtime.eventBus, responseSubscriber);
+    await handleNaturalLanguageMessage(message, runtime.eventBus);
   });
 
   client.on('interactionCreate', async (interaction) => {
@@ -140,8 +138,7 @@ const registerHandlers = (
         interaction,
         runtime.eventBus,
         dependencies.tickerManagement,
-        dependencies.scheduledQueries,
-        responseSubscriber
+        dependencies.scheduledQueries
       );
     } catch (error) {
       runtime.logging.bot.commandFailed({ commandName: interaction.commandName, error });
@@ -182,11 +179,11 @@ export const startBot = async (
   });
 
   const rest = new REST().setToken(botToken);
-  const responseSubscriber = createLlmResponseSubscriber(runtime.eventBus);
+  const responseSubscriber = createLlmResponseSubscriber(runtime.eventBus, client);
 
   await deployBot(rest, clientId, guildId, runtime);
 
-  registerHandlers(client, runtime, dependencies, responseSubscriber);
+  registerHandlers(client, runtime, dependencies);
 
   registerMarketAnalysisSubscriber(client, runtime.eventBus);
   registerMarketSummarySubscriber(client, runtime.eventBus);

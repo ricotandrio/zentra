@@ -4,7 +4,6 @@ import {
   SummarizeContentRequestedEvent,
 } from '@/modules/llm/events';
 import { generateTraceId } from '@/shared/utils';
-import { LlmResponseSubscriber } from '../../subscribers/llm-response.subscriber';
 
 export const data = new SlashCommandBuilder()
   .setName('summarize')
@@ -19,26 +18,19 @@ export const data = new SlashCommandBuilder()
 export async function execute(
   interaction: ChatInputCommandInteraction,
   eventBus?: IEventBus,
-  _tickerManagementModule?: unknown,
-  _scheduledQueriesModule?: unknown,
-  responseSubscriber?: LlmResponseSubscriber
+  _tickerManagementModule?: unknown
 ): Promise<void> {
   const url = interaction.options.getString('url', true);
 
   await interaction.deferReply();
-
+  const traceId = generateTraceId();
+  
   try {
     if (!eventBus) {
       await interaction.editReply('❌ Event bus is not available.');
       return;
     }
 
-    if (!responseSubscriber) {
-      await interaction.editReply('❌ LLM response subscriber is not available.');
-      return;
-    }
-
-    const traceId = generateTraceId();
     const request: SummarizeContentRequestedEvent = {
       type: 'llm:summarize-content:requested',
       source: 'worker',
@@ -47,13 +39,17 @@ export async function execute(
       data: {
         url,
         userId: interaction.user.id,
+        responseContext: {
+          type: 'discord-interaction',
+          applicationId: interaction.applicationId,
+          interactionToken: interaction.token,
+          url,
+        },
       },
     };
-    responseSubscriber.registerSummary(traceId, interaction, url);
     await eventBus.publish(request);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to summarize content';
-    await interaction.editReply(`❌ ${message}`);
+    const message = error instanceof Error ? error.message : 'Failed to summarize content';
+    await interaction.editReply(`Sorry, I encountered an error '${message}'`);
   }
 }

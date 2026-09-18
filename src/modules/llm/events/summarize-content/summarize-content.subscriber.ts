@@ -18,7 +18,10 @@ export function subscribeToSummarizeContentRequests(
           source: 'worker',
           timestamp: new Date(),
           traceId: event.traceId,
-          data: result,
+          data: {
+            ...result,
+            responseContext: event.data.responseContext,
+          },
         };
         await eventBus.publish(completedEvent);
       } catch (error) {
@@ -29,6 +32,7 @@ export function subscribeToSummarizeContentRequests(
           traceId: event.traceId,
           data: {
             error: error instanceof Error ? error.message : String(error),
+            responseContext: event.data.responseContext,
           },
         };
         await eventBus.publish(failedEvent);

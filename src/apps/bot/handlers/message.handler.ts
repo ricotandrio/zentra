@@ -3,12 +3,10 @@ import { logging } from '@/shared/logger';
 import { IEventBus } from '@/shared/event-bus';
 import { GenerateResponseRequestedEvent } from '@/modules/llm/events';
 import { generateTraceId } from '@/shared/utils';
-import { LlmResponseSubscriber } from '../subscribers/llm-response.subscriber';
 
 export const handleNaturalLanguageMessage = async (
   message: Message,
-  eventBus: IEventBus,
-  responseSubscriber: LlmResponseSubscriber
+  eventBus: IEventBus
 ) => {
   const content = message.content.replace(/<@!?(\d+)>/, '').trim();
 
@@ -24,9 +22,14 @@ export const handleNaturalLanguageMessage = async (
       data: {
         prompt: content,
         userId: message.author.id,
+        responseContext: {
+          type: 'discord-message',
+          channelId: message.channel.id,
+          messageId: message.id,
+          promptLength: content.length,
+        },
       },
     };
-    responseSubscriber.registerMessage(traceId, message, content.length);
     await eventBus.publish(request);
   } catch (error) {
     logging.llm.responseFailed({ error });

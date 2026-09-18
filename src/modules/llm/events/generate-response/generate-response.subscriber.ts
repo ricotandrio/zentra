@@ -22,6 +22,7 @@ export function subscribeToGenerateResponseRequests(
             response,
             promptLength: event.data.prompt.length,
             responseLength: response.length,
+            responseContext: event.data.responseContext,
           },
         };
         await eventBus.publish(completedEvent);
@@ -33,6 +34,7 @@ export function subscribeToGenerateResponseRequests(
           traceId: event.traceId,
           data: {
             error: error instanceof Error ? error.message : String(error),
+            responseContext: event.data.responseContext,
           },
         };
         await eventBus.publish(failedEvent);

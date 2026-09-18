@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, Message } from 'discord.js';
+import { Client, WebhookClient } from 'discord.js';
 import { IEventBus } from '@/shared/event-bus';
 import {
   GenerateResponseCompletedEvent,
@@ -10,12 +10,7 @@ import { logging } from '@/shared/logger';
 
 const MAX_MESSAGE_LENGTH = 2000;
 
-type PendingMessage = { message: Message; promptLength: number };
-type PendingSummary = { interaction: ChatInputCommandInteraction; url: string };
-
 export interface LlmResponseSubscriber {
-  registerMessage(traceId: string, message: Message, promptLength: number): void;
-  registerSummary(traceId: string, interaction: ChatInputCommandInteraction, url: string): void;
   unsubscribe(): void;
 }
 
@@ -39,25 +34,26 @@ const splitIntoChunks = (text: string): string[] => {
   return chunks;
 };
 
-export function createLlmResponseSubscriber(eventBus: IEventBus): LlmResponseSubscriber {
-  const pendingMessages = new Map<string, PendingMessage>();
-  const pendingSummaries = new Map<string, PendingSummary>();
-
+export function createLlmResponseSubscriber(
+  eventBus: IEventBus,
+  client: Client
+): LlmResponseSubscriber {
   const unsubscribeMessageCompleted = eventBus.subscribe<GenerateResponseCompletedEvent>(
     'llm:generate-response:completed',
     async (event) => {
-      const pending = pendingMessages.get(event.traceId);
-      if (!pending) return;
-
-      pendingMessages.delete(event.traceId);
       const response = event.data.response;
-      await pending.message.reply(
+      if (event.data.responseContext.type !== 'discord-message') return;
+
+      const channel = await client.channels.fetch(event.data.responseContext.channelId);
+      if (!channel?.isTextBased() || !('messages' in channel)) return;
+      const message = await channel.messages.fetch(event.data.responseContext.messageId);
+      await message.reply(
         response.length > MAX_MESSAGE_LENGTH
           ? `${response.substring(0, MAX_MESSAGE_LENGTH - 3)}...`
           : response
       );
       logging.llm.responseGenerated({
-        promptLength: pending.promptLength,
+        promptLength: event.data.responseContext.promptLength,
         responseLength: response.length,
       });
     }
@@ -66,54 +62,52 @@ export function createLlmResponseSubscriber(eventBus: IEventBus): LlmResponseSub
   const unsubscribeMessageFailed = eventBus.subscribe<GenerateResponseFailedEvent>(
     'llm:generate-response:failed',
     async (event) => {
-      const pending = pendingMessages.get(event.traceId);
-      if (!pending) return;
-
-      pendingMessages.delete(event.traceId);
+      if (event.data.responseContext.type !== 'discord-message') return;
+      const channel = await client.channels.fetch(event.data.responseContext.channelId);
+      if (!channel?.isTextBased() || !('messages' in channel)) return;
+      const message = await channel.messages.fetch(event.data.responseContext.messageId);
       logging.llm.responseFailed({ error: event.data.error });
-      await pending.message.reply('Sorry, I encountered an error processing your message.');
+      await message.reply('Sorry, I encountered an error processing your message.');
     }
   );
 
   const unsubscribeSummaryCompleted = eventBus.subscribe<SummarizeContentCompletedEvent>(
     'llm:summarize-content:completed',
     async (event) => {
-      const pending = pendingSummaries.get(event.traceId);
-      if (!pending) return;
-
-      pendingSummaries.delete(event.traceId);
-      const chunks = splitIntoChunks(`TLDR: ${pending.url}\n\n${event.data.summary}`);
+      if (event.data.responseContext.type !== 'discord-interaction') return;
+      const webhook = new WebhookClient({
+        id: event.data.responseContext.applicationId,
+        token: event.data.responseContext.interactionToken,
+      });
+      const chunks = splitIntoChunks(
+        `TLDR: ${event.data.responseContext.url}\n\n${event.data.summary}`
+      );
       const [firstChunk, ...restChunks] = chunks;
-      if (firstChunk) await pending.interaction.editReply(firstChunk);
-      for (const chunk of restChunks) await pending.interaction.followUp(chunk);
+      if (firstChunk) await webhook.editMessage('@original', { content: firstChunk });
+      for (const chunk of restChunks) await webhook.send({ content: chunk });
+      webhook.destroy();
     }
   );
 
   const unsubscribeSummaryFailed = eventBus.subscribe<SummarizeContentFailedEvent>(
     'llm:summarize-content:failed',
     async (event) => {
-      const pending = pendingSummaries.get(event.traceId);
-      if (!pending) return;
-
-      pendingSummaries.delete(event.traceId);
-      await pending.interaction.editReply(`❌ ${event.data.error}`);
+      if (event.data.responseContext.type !== 'discord-interaction') return;
+      const webhook = new WebhookClient({
+        id: event.data.responseContext.applicationId,
+        token: event.data.responseContext.interactionToken,
+      });
+      await webhook.editMessage('@original', { content: `❌ ${event.data.error}` });
+      webhook.destroy();
     }
   );
 
   return {
-    registerMessage(traceId, message, promptLength) {
-      pendingMessages.set(traceId, { message, promptLength });
-    },
-    registerSummary(traceId, interaction, url) {
-      pendingSummaries.set(traceId, { interaction, url });
-    },
     unsubscribe() {
       unsubscribeMessageCompleted();
       unsubscribeMessageFailed();
       unsubscribeSummaryCompleted();
       unsubscribeSummaryFailed();
-      pendingMessages.clear();
-      pendingSummaries.clear();
     },
   };
 }
