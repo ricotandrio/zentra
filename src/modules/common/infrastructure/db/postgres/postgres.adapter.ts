@@ -5,9 +5,7 @@ import {
   QueryExecutor,
 } from '@/modules/common/application/ports';
 
-export class PostgresAdapter
-  implements DatabaseConnection, QueryExecutor
-{
+export class PostgresAdapter implements DatabaseConnection, QueryExecutor {
   private readonly pool: Pool;
 
   constructor(connectionString: string) {

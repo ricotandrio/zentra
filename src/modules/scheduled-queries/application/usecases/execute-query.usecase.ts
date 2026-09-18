@@ -1,5 +1,5 @@
+import { QueryExecutor } from '@/modules/common/application/ports/db';
 import { IScheduledQueryRepository } from '../contracts/scheduled-query.repository.port';
-import { IQueryExecutorPort } from '../contracts/query-executor.port';
 
 export interface ExecuteQueryResult {
   columns: string[];
@@ -9,7 +9,7 @@ export interface ExecuteQueryResult {
 export class ExecuteQueryUseCase {
   constructor(
     private readonly queryRepository: IScheduledQueryRepository,
-    private readonly queryExecutor: IQueryExecutorPort
+    private readonly queryExecutor: QueryExecutor
   ) {}
 
   async execute(id: number): Promise<ExecuteQueryResult> {

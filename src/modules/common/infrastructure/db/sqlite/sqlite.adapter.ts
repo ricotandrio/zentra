@@ -7,9 +7,7 @@ import {
   QueryExecutor,
 } from '@/modules/common/application/ports/db';
 
-export class SQLiteAdapter
-  implements DatabaseConnection, QueryExecutor
-{
+export class SQLiteAdapter implements DatabaseConnection, QueryExecutor {
   private readonly db: Database.Database;
 
   constructor() {

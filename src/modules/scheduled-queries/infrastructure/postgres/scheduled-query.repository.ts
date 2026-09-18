@@ -1,44 +1,68 @@
-import { Pool } from 'pg';
-import { IScheduledQueryRepository } from '@/modules/scheduled-queries/application/contracts/scheduled-query.repository.port';
 import { ScheduledQuery } from '@/modules/scheduled-queries/domain/entities/scheduled-query.entity';
+import { IScheduledQueryRepository } from '../../application/contracts/scheduled-query.repository.port';
+import { QueryExecutor } from '@/modules/common/application/ports';
+
+interface ScheduledQueryRow extends Record<string, unknown> {
+  id: number;
+  name: string;
+  schedule: string | null;
+  sql_query: string;
+  enabled: boolean;
+  last_run_at: string | null;
+  next_run_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export class PostgresScheduledQueryRepository implements IScheduledQueryRepository {
-  constructor(private readonly pool: Pool) {}
+  constructor(private readonly db: QueryExecutor) {}
 
   async findAll(): Promise<ScheduledQuery[]> {
-    const result = await this.pool.query(
+    const rows = await this.db.query<ScheduledQueryRow>(
       'SELECT * FROM scheduled_queries ORDER BY id ASC'
     );
-    return result.rows.map(this.toEntity);
+
+    return rows.map(row => this.toEntity(row));
   }
 
   async findById(id: number): Promise<ScheduledQuery | null> {
-    const result = await this.pool.query(
+    const rows = await this.db.query<ScheduledQueryRow>(
       'SELECT * FROM scheduled_queries WHERE id = $1',
       [id]
     );
-    if (result.rows.length === 0) return null;
-    return this.toEntity(result.rows[0]);
+
+    const row = rows[0];
+
+    if (!row) {
+      return null;
+    }
+
+    return this.toEntity(row);
   }
 
   async updateLastRunAt(id: number, date: Date): Promise<void> {
-    await this.pool.query(
-      'UPDATE scheduled_queries SET last_run_at = $1, updated_at = NOW() WHERE id = $2',
+    await this.db.execute(
+      `
+        UPDATE scheduled_queries
+        SET last_run_at = $1,
+            updated_at = NOW()
+        WHERE id = $2
+      `,
       [date, id]
     );
   }
 
-  private toEntity(row: Record<string, unknown>): ScheduledQuery {
+  private toEntity(row: ScheduledQueryRow): ScheduledQuery {
     return new ScheduledQuery(
-      row.id as number,
-      row.name as string,
-      row.schedule as string | null,
-      row.sql_query as string,
-      row.enabled as boolean,
-      row.last_run_at ? new Date(row.last_run_at as string) : null,
-      row.next_run_at ? new Date(row.next_run_at as string) : null,
-      new Date(row.created_at as string),
-      new Date(row.updated_at as string)
+      row.id,
+      row.name,
+      row.schedule,
+      row.sql_query,
+      row.enabled,
+      row.last_run_at ? new Date(row.last_run_at) : null,
+      row.next_run_at ? new Date(row.next_run_at) : null,
+      new Date(row.created_at),
+      new Date(row.updated_at)
     );
   }
 }

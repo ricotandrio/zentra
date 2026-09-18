@@ -1,9 +1,10 @@
-import { Pool } from 'pg';
 import { ModuleHandle, Runtime } from '@/shared/runtime';
-import { PostgresAdapter } from './infrastructure/postgres/postgres.adapter';
+
 import { PostgresScheduledQueryRepository } from './infrastructure/postgres/scheduled-query.repository';
-import { ListQueriesUseCase } from './application/use-cases/list-queries.usecase';
-import { ExecuteQueryUseCase } from './application/use-cases/execute-query.usecase';
+import { ListQueriesUseCase } from './application/usecases/list-queries.usecase';
+import { ExecuteQueryUseCase } from './application/usecases/execute-query.usecase';
+import { DatabaseConnection, QueryExecutor } from '../common/application/ports';
+import { PostgresAdapter } from '../common';
 
 export interface ScheduledQueriesModule {
   listQueriesUseCase: ListQueriesUseCase;
@@ -11,7 +12,7 @@ export interface ScheduledQueriesModule {
 }
 
 export function createScheduledQueriesModule(): ModuleHandle<ScheduledQueriesModule> {
-  let pool: Pool | null = null;
+  let pool: DatabaseConnection & QueryExecutor | null = null;
   let service: ScheduledQueriesModule | null = null;
 
   return {
@@ -23,7 +24,7 @@ export function createScheduledQueriesModule(): ModuleHandle<ScheduledQueriesMod
     async register(runtime: Runtime) {
       const connectionString = runtime.config.postgresql.url;
 
-      pool = new Pool({ connectionString });
+      pool = new PostgresAdapter(connectionString);
 
       await pool.query(`
         CREATE TABLE IF NOT EXISTS scheduled_queries (
@@ -39,17 +40,16 @@ export function createScheduledQueriesModule(): ModuleHandle<ScheduledQueriesMod
         )
       `);
 
-      const queryExecutor = new PostgresAdapter(connectionString);
       const queryRepository = new PostgresScheduledQueryRepository(pool);
 
       service = {
         listQueriesUseCase: new ListQueriesUseCase(queryRepository),
-        executeQueryUseCase: new ExecuteQueryUseCase(queryRepository, queryExecutor),
+        executeQueryUseCase: new ExecuteQueryUseCase(queryRepository, pool),
       };
     },
 
     async shutdown() {
-      await pool?.end();
+      await pool?.close();
     },
   };
 }
