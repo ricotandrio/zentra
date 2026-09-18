@@ -1,8 +1,8 @@
 import { GoogleGenAI } from '@google/genai';
-import { IGeminiPort } from '@/modules/llm/application/contracts/llm.port';
+import { Llm } from '@/modules/llm/application/ports/llm.port';
 import { logging } from '@/shared/logger';
 
-export class GeminiAdapter implements IGeminiPort {
+export class GeminiAdapter implements Llm {
   private client: GoogleGenAI;
   private model: string;
 

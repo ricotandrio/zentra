@@ -1,7 +1,6 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { IEventBus } from '@/shared/event-bus';
 import { TickerManagementModule } from '@/modules/ticker-management';
-import { ContentSummaryModule } from '@/modules/content-summary';
 import { ScheduledQueriesModule } from '@/modules/scheduled-queries';
 
 export const data = new SlashCommandBuilder()
@@ -12,7 +11,6 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
   _eventBus?: IEventBus,
   _tickerManagementModule?: TickerManagementModule,
-  _contentSummaryModule?: ContentSummaryModule,
   scheduledQueriesModule?: ScheduledQueriesModule
 ): Promise<void> {
   if (!scheduledQueriesModule) {

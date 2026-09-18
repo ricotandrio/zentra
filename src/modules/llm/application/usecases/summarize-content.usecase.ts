@@ -1,5 +1,5 @@
-import { IScraperPort } from '@/modules/content-summary/application/contracts/scraper.port';
-import { GenerateResponseUseCase } from '@/modules/llm/application/usecases/generate-response.usecase';
+import { Scraper } from '../ports/scraper.port';
+import { GenerateResponseUseCase } from './generate-response.usecase';
 import { logging } from '@/shared/logger';
 
 export interface SummarizeContentResult {
@@ -12,7 +12,7 @@ const MAX_MARKDOWN_CHARS = 15000;
 
 export class SummarizeContentUseCase {
   constructor(
-    private scraperPort: IScraperPort,
+    private readonly scraper: Scraper,
     private generateUseCase: GenerateResponseUseCase
   ) {}
 
@@ -25,7 +25,7 @@ export class SummarizeContentUseCase {
 
     logging.contentSummary.summarizeStarted({ url: trimmedUrl });
 
-    const markdown = await this.scraperPort.extractMarkdown(trimmedUrl);
+    const markdown = await this.scraper.extractMarkdown(trimmedUrl);
     const truncatedMarkdown =
       markdown.length > MAX_MARKDOWN_CHARS
         ? `${markdown.substring(0, MAX_MARKDOWN_CHARS)}\n\n[Content truncated]`

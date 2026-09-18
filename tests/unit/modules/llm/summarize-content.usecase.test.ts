@@ -1,11 +1,11 @@
-import { SummarizeContentUseCase } from '@/modules/content-summary/application/usecases/summarize-content.usecase';
+import { SummarizeContentUseCase } from '@/modules/llm/application/usecases/summarize-content.usecase';
 
 describe('SummarizeContentUseCase', () => {
-  let mockScraperPort: any;
+  let mockScraper: any;
   let mockGenerateUseCase: any;
 
   beforeEach(() => {
-    mockScraperPort = {
+    mockScraper = {
       extractMarkdown: jest.fn().mockResolvedValue('# Hello\n\nThis is some article content.'),
     };
     mockGenerateUseCase = {
@@ -15,11 +15,11 @@ describe('SummarizeContentUseCase', () => {
 
   describe('execute', () => {
     it('should scrape content and return markdown + summary', async () => {
-      const useCase = new SummarizeContentUseCase(mockScraperPort, mockGenerateUseCase);
+      const useCase = new SummarizeContentUseCase(mockScraper, mockGenerateUseCase);
 
       const result = await useCase.execute('https://example.com/article');
 
-      expect(mockScraperPort.extractMarkdown).toHaveBeenCalledWith('https://example.com/article');
+      expect(mockScraper.extractMarkdown).toHaveBeenCalledWith('https://example.com/article');
       expect(mockGenerateUseCase.execute).toHaveBeenCalledWith(
         expect.stringContaining('# Hello')
       );
@@ -28,18 +28,18 @@ describe('SummarizeContentUseCase', () => {
     });
 
     it('should throw error for invalid URL', async () => {
-      const useCase = new SummarizeContentUseCase(mockScraperPort, mockGenerateUseCase);
+      const useCase = new SummarizeContentUseCase(mockScraper, mockGenerateUseCase);
 
       await expect(useCase.execute('not-a-url')).rejects.toThrow('Invalid URL');
-      expect(mockScraperPort.extractMarkdown).not.toHaveBeenCalled();
+      expect(mockScraper.extractMarkdown).not.toHaveBeenCalled();
       expect(mockGenerateUseCase.execute).not.toHaveBeenCalled();
     });
 
     it('should truncate long markdown content before sending to LLM', async () => {
       const longMarkdown = 'word '.repeat(20000);
-      mockScraperPort.extractMarkdown.mockResolvedValue(longMarkdown);
+      mockScraper.extractMarkdown.mockResolvedValue(longMarkdown);
 
-      const useCase = new SummarizeContentUseCase(mockScraperPort, mockGenerateUseCase);
+      const useCase = new SummarizeContentUseCase(mockScraper, mockGenerateUseCase);
 
       await useCase.execute('https://example.com/long-article');
 
@@ -49,11 +49,11 @@ describe('SummarizeContentUseCase', () => {
     });
 
     it('should propagate scraper errors', async () => {
-      mockScraperPort.extractMarkdown.mockRejectedValue(
+      mockScraper.extractMarkdown.mockRejectedValue(
         new Error('Content scraper error: failed to fetch')
       );
 
-      const useCase = new SummarizeContentUseCase(mockScraperPort, mockGenerateUseCase);
+      const useCase = new SummarizeContentUseCase(mockScraper, mockGenerateUseCase);
 
       await expect(useCase.execute('https://example.com/broken')).rejects.toThrow(
         'Content scraper error'

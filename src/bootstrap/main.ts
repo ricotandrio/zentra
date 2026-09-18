@@ -4,7 +4,6 @@ import { startBot } from '@/apps/bot';
 import { createTickerManagementModule } from '@/modules/ticker-management';
 import { createMarketAnalysisModule } from '@/modules/market-analysis';
 import { createLlmModule } from '@/modules/llm';
-import { createContentSummaryModule } from '@/modules/content-summary';
 import { createScheduledQueriesModule } from '@/modules/scheduled-queries';
 import { YahooMarketDataAdapter } from '@/modules/market-analysis/infrastructure/yahoo';
 import { MarketScraperAdapter } from '@/modules/market-analysis/infrastructure/data-sources';
@@ -26,22 +25,14 @@ import { generateTraceId } from '@/shared/utils';
     marketSummary: new MarketScraperAdapter(),
   }));
 
-  const llmHandle = createLlmModule();
-  await runtime.registerModule(llmHandle);
-  const llm = llmHandle.getService();
-
-  const contentSummaryHandle = createContentSummaryModule(llm);
-  await runtime.registerModule(contentSummaryHandle);
-  const contentSummary = contentSummaryHandle.getService();
+  await runtime.registerModule(createLlmModule());
 
   const scheduledQueriesHandle = createScheduledQueriesModule();
   await runtime.registerModule(scheduledQueriesHandle);
   const scheduledQueries = scheduledQueriesHandle.getService();
 
   await startBot(runtime, {
-    llm,
     tickerManagement,
-    contentSummary,
     scheduledQueries,
   });
 

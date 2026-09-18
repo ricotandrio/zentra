@@ -1,3 +1,12 @@
+import type {
+  GenerateResponseCompletedEvent,
+  GenerateResponseFailedEvent,
+  GenerateResponseRequestedEvent,
+  SummarizeContentCompletedEvent,
+  SummarizeContentFailedEvent,
+  SummarizeContentRequestedEvent,
+} from '@/modules/llm/events';
+
 /**
  * Event Bus - Type definitions for all domain events
  * Defines the contract for events that can be published and subscribed to
@@ -128,7 +137,13 @@ export type ApplicationEvent =
   | MarketSummaryCompleteEvent
   | TickerAddedEvent
   | TickerRemovedEvent
-  | HeartbeatTickEvent;
+  | HeartbeatTickEvent
+  | GenerateResponseRequestedEvent
+  | GenerateResponseCompletedEvent
+  | GenerateResponseFailedEvent
+  | SummarizeContentRequestedEvent
+  | SummarizeContentCompletedEvent
+  | SummarizeContentFailedEvent;
 
 // Type-safe event handler
 export type EventHandler<T extends ApplicationEvent = ApplicationEvent> = (

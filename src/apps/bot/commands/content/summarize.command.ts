@@ -1,30 +1,10 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { ContentSummaryModule } from '@/modules/content-summary';
-
-const MAX_MESSAGE_LENGTH = 2000;
-
-const splitIntoChunks = (text: string, maxLength: number): string[] => {
-  if (text.length <= maxLength) return [text];
-
-  const chunks: string[] = [];
-  let remaining = text;
-
-  while (remaining.length > 0) {
-    if (remaining.length <= maxLength) {
-      chunks.push(remaining);
-      break;
-    }
-
-    let cutAt = remaining.lastIndexOf('\n', maxLength);
-    if (cutAt <= 0) cutAt = remaining.lastIndexOf(' ', maxLength);
-    if (cutAt <= 0) cutAt = maxLength;
-
-    chunks.push(remaining.substring(0, cutAt).trimEnd());
-    remaining = remaining.substring(cutAt).trimStart();
-  }
-
-  return chunks;
-};
+import { IEventBus } from '@/shared/event-bus';
+import {
+  SummarizeContentRequestedEvent,
+} from '@/modules/llm/events';
+import { generateTraceId } from '@/shared/utils';
+import { LlmResponseSubscriber } from '../../subscribers/llm-response.subscriber';
 
 export const data = new SlashCommandBuilder()
   .setName('summarize')
@@ -38,33 +18,39 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(
   interaction: ChatInputCommandInteraction,
-  _eventBus?: unknown,
+  eventBus?: IEventBus,
   _tickerManagementModule?: unknown,
-  contentSummaryModule?: ContentSummaryModule
+  _scheduledQueriesModule?: unknown,
+  responseSubscriber?: LlmResponseSubscriber
 ): Promise<void> {
   const url = interaction.options.getString('url', true);
 
   await interaction.deferReply();
 
   try {
-    if (!contentSummaryModule) {
-      await interaction.editReply('❌ Content summary module is not available.');
+    if (!eventBus) {
+      await interaction.editReply('❌ Event bus is not available.');
       return;
     }
 
-    const { summary } = await contentSummaryModule.summarize.execute(url);
-
-    const content = `TLDR: ${url}\n\n${summary}`;
-    const chunks = splitIntoChunks(content, MAX_MESSAGE_LENGTH);
-    const [firstChunk, ...restChunks] = chunks;
-
-    if (firstChunk) {
-      await interaction.editReply(firstChunk);
+    if (!responseSubscriber) {
+      await interaction.editReply('❌ LLM response subscriber is not available.');
+      return;
     }
 
-    for (const chunk of restChunks) {
-      await interaction.followUp(chunk);
-    }
+    const traceId = generateTraceId();
+    const request: SummarizeContentRequestedEvent = {
+      type: 'llm:summarize-content:requested',
+      source: 'worker',
+      timestamp: new Date(),
+      traceId,
+      data: {
+        url,
+        userId: interaction.user.id,
+      },
+    };
+    responseSubscriber.registerSummary(traceId, interaction, url);
+    await eventBus.publish(request);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Failed to summarize content';

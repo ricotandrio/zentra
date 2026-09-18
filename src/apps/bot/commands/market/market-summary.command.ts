@@ -45,7 +45,7 @@ export async function execute(
 
     // Emit market analysis trigger event with traceId generated at entry point
     const traceId = generateTraceId();
-    eventBus.publish({
+    await eventBus.publish({
       type: 'worker:market-analysis:trigger',
       source: 'bot',
       timestamp: new Date(),

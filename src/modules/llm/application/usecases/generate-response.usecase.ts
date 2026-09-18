@@ -1,9 +1,9 @@
-import { IGeminiPort } from '@/modules/llm/application/contracts/llm.port';
+import { Llm } from '@/modules/llm/application/ports/llm.port';
 
 const FALLBACK_MESSAGE = "Sorry, I couldn't generate a response right now.";
 
 export class GenerateResponseUseCase {
-  constructor(private geminiPort: IGeminiPort) {}
+  constructor(private readonly llm: Llm) {}
 
   async execute(prompt: string): Promise<string> {
     const trimmed = prompt.trim();
@@ -13,7 +13,7 @@ export class GenerateResponseUseCase {
     }
 
     try {
-      return await this.geminiPort.generate(trimmed);
+      return await this.llm.generate(trimmed);
     } catch {
       return FALLBACK_MESSAGE;
     }

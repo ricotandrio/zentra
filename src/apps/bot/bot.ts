@@ -9,10 +9,8 @@ import * as summarize from './commands/content/summarize.command';
 import * as queries from './commands/queries/queries.command';
 import * as useQuery from './commands/queries/use-query.command';
 import { IEventBus } from '@/shared/event-bus';
-import { LlmModule } from '@/modules/llm';
-import { ContentSummaryModule } from '@/modules/content-summary';
 import { ScheduledQueriesModule } from '@/modules/scheduled-queries';
-import { registerHeartbeatSubscriber, registerMarketAnalysisSubscriber, registerMarketSummarySubscriber } from './subscribers';
+import { createLlmResponseSubscriber, LlmResponseSubscriber, registerHeartbeatSubscriber, registerMarketAnalysisSubscriber, registerMarketSummarySubscriber } from './subscribers';
 import { TickerManagementModule } from '@/modules/ticker-management';
 import { Runtime } from '@/shared/runtime';
 import { config } from '@/shared/config';
@@ -23,8 +21,8 @@ export interface BotCommandWithDeps {
     interaction: ChatInputCommandInteraction,
     eventBus?: IEventBus,
     tickerManagementModule?: TickerManagementModule,
-    contentSummaryModule?: ContentSummaryModule,
-    scheduledQueriesModule?: ScheduledQueriesModule
+    scheduledQueriesModule?: ScheduledQueriesModule,
+    llmResponseSubscriber?: LlmResponseSubscriber
   ) => Promise<void>;
   autocomplete?: (interaction: AutocompleteInteraction) => Promise<void>;
 }
@@ -34,9 +32,7 @@ export interface BotCommand extends BotCommandWithDeps {
 }
 
 export interface BotDependencies {
-  llm: LlmModule;
   tickerManagement: TickerManagementModule;
-  contentSummary: ContentSummaryModule;
   scheduledQueries: ScheduledQueriesModule;
 }
 
@@ -111,7 +107,8 @@ export const deployBot = async (
 const registerHandlers = (
   client: Client,
   runtime: Runtime,
-  dependencies: BotDependencies
+  dependencies: BotDependencies,
+  responseSubscriber: LlmResponseSubscriber
 ) => {
   const enabledCommands = getEnabledCommands(runtime);
 
@@ -129,7 +126,7 @@ const registerHandlers = (
       return;
     }
 
-    await handleNaturalLanguageMessage(message, dependencies.llm);
+    await handleNaturalLanguageMessage(message, runtime.eventBus, responseSubscriber);
   });
 
   client.on('interactionCreate', async (interaction) => {
@@ -143,8 +140,8 @@ const registerHandlers = (
         interaction,
         runtime.eventBus,
         dependencies.tickerManagement,
-        dependencies.contentSummary,
-        dependencies.scheduledQueries
+        dependencies.scheduledQueries,
+        responseSubscriber
       );
     } catch (error) {
       runtime.logging.bot.commandFailed({ commandName: interaction.commandName, error });
@@ -185,10 +182,11 @@ export const startBot = async (
   });
 
   const rest = new REST().setToken(botToken);
+  const responseSubscriber = createLlmResponseSubscriber(runtime.eventBus);
 
   await deployBot(rest, clientId, guildId, runtime);
 
-  registerHandlers(client, runtime, dependencies);
+  registerHandlers(client, runtime, dependencies, responseSubscriber);
 
   registerMarketAnalysisSubscriber(client, runtime.eventBus);
   registerMarketSummarySubscriber(client, runtime.eventBus);
@@ -198,6 +196,7 @@ export const startBot = async (
   runtime.logging.bot.startup();
 
   runtime.onShutdown(() => {
+    responseSubscriber.unsubscribe();
     client.destroy();
   });
 };

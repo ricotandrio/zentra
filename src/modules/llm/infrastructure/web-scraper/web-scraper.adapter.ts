@@ -1,9 +1,9 @@
 import { chromium, Browser, Page } from 'playwright';
 import TurndownService from 'turndown';
-import { IScraperPort } from '@/modules/content-summary/application/contracts/scraper.port';
+import { Scraper } from '../../application/ports/scraper.port';
 import { logging } from '@/shared/logger';
 
-export class WebScraperAdapter implements IScraperPort {
+export class WebScraperAdapter implements Scraper {
   private browser: Browser | null = null;
   private page: Page | null = null;
   private turndownService: TurndownService;
