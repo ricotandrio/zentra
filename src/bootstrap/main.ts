@@ -47,7 +47,7 @@ import { generateTraceId } from '@/shared/utils';
 
   registerHeartbeatJob(runtime);
 
-  startExpressApp(runtime);
+  startExpressApp(runtime.eventBus, runtime.config);
 
   runtime.scheduler.start();
 
@@ -61,7 +61,7 @@ import { generateTraceId } from '@/shared/utils';
 });
 
 function registerHeartbeatJob(runtime: ReturnType<typeof createRuntime>): void {
-  const channelId = runtime.config.DISCORD.DISCORD_STANDUP_CHANNEL_ID;
+  const channelId = runtime.config.discord.standupChannelId;
 
   runtime.scheduler.register({
     name: 'heartbeat',

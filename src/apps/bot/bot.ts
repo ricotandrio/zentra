@@ -15,7 +15,7 @@ import { ScheduledQueriesModule } from '@/modules/scheduled-queries';
 import { registerHeartbeatSubscriber, registerMarketAnalysisSubscriber, registerMarketSummarySubscriber } from './subscribers';
 import { TickerManagementModule } from '@/modules/ticker-management';
 import { Runtime } from '@/shared/runtime';
-import { env } from '@/shared/config';
+import { config } from '@/shared/config';
 
 export interface BotCommandWithDeps {
   data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder;
@@ -51,23 +51,23 @@ const allBotCommands: Record<string, BotCommandWithDeps> = {
   'use-query': useQuery as BotCommandWithDeps,
 };
 
-const commandFeatureFlags: Record<string, keyof typeof env.FEATURES> = {
-  ping: 'COMMAND_PING',
-  'add-ticker': 'COMMAND_ADD_TICKER',
-  'remove-ticker': 'COMMAND_REMOVE_TICKER',
-  'list-tickers': 'COMMAND_LIST_TICKERS',
-  'market-summary': 'COMMAND_MARKET_SUMMARY',
-  summarize: 'COMMAND_SUMMARIZE',
-  queries: 'COMMAND_QUERIES',
-  'use-query': 'COMMAND_USE_QUERY',
+const commandFeatureFlags: Record<string, keyof typeof config.features> = {
+  ping: 'commandPing',
+  'add-ticker': 'commandAddTicker',
+  'remove-ticker': 'commandRemoveTicker',
+  'list-tickers': 'commandListTickers',
+  'market-summary': 'commandMarketSummary',
+  summarize: 'commandSummarize',
+  queries: 'commandQueries',
+  'use-query': 'commandUseQuery',
 };
 
 const getEnabledCommands = (runtime: Runtime): Record<string, BotCommandWithDeps> => {
-  const features = runtime.config.FEATURES;
+  const features = runtime.config.features;
   return Object.fromEntries(
-    Object.entries(allBotCommands).filter(([name]) => {
-      const flag = commandFeatureFlags[name];
-      return flag ? features[flag] : true;
+    Object.entries(allBotCommands).filter(([commandName]) => {
+      const featureFlag = commandFeatureFlags[commandName];
+      return featureFlag ? features[featureFlag] : true;
     })
   );
 };
@@ -173,7 +173,7 @@ export const startBot = async (
   runtime: Runtime,
   dependencies: BotDependencies
 ): Promise<void> => {
-  const { BOT_TOKEN, CLIENT_ID, GUILD_ID } = runtime.config.DISCORD;
+  const { botToken, clientId, guildId } = runtime.config.discord;
 
   const client = new Client({
     intents: [
@@ -184,9 +184,9 @@ export const startBot = async (
     ],
   });
 
-  const rest = new REST().setToken(BOT_TOKEN);
+  const rest = new REST().setToken(botToken);
 
-  await deployBot(rest, CLIENT_ID, GUILD_ID, runtime);
+  await deployBot(rest, clientId, guildId, runtime);
 
   registerHandlers(client, runtime, dependencies);
 
@@ -194,7 +194,7 @@ export const startBot = async (
   registerMarketSummarySubscriber(client, runtime.eventBus);
   registerHeartbeatSubscriber(client, runtime.eventBus);
 
-  await client.login(BOT_TOKEN);
+  await client.login(botToken);
   runtime.logging.bot.startup();
 
   runtime.onShutdown(() => {

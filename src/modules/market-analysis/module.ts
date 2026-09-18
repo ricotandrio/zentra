@@ -18,7 +18,7 @@ export function createMarketAnalysisModule(dependencies: MarketAnalysisDependenc
 
   return {
     async register(runtime: Runtime) {
-      const channelId = runtime.config.DISCORD.DISCORD_STANDUP_CHANNEL_ID;
+      const channelId = runtime.config.discord.standupChannelId;
       await dependencies.marketSummary.initialize?.();
 
       const jobDependencies: MarketAnalysisJobDependencies = {

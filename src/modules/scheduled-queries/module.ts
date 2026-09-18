@@ -21,7 +21,7 @@ export function createScheduledQueriesModule(): ModuleHandle<ScheduledQueriesMod
     },
 
     async register(runtime: Runtime) {
-      const connectionString = runtime.config.POSTGRESQL.URL;
+      const connectionString = runtime.config.postgresql.url;
 
       pool = new Pool({ connectionString });
 

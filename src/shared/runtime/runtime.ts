@@ -1,7 +1,7 @@
 import { IEventBus, initializeEventBus } from '@/shared/event-bus';
 import { Scheduler } from '@/shared/scheduler';
 import { LoggingService, logging } from '@/shared/logger';
-import { env } from '@/shared/config';
+import { config } from '@/shared/config';
 import { rotateLogs } from '@/shared/logger/maintenance/log-rotate';
 
 export interface Module {
@@ -16,7 +16,7 @@ export interface ModuleHandle<T> extends Module {
 export interface Runtime {
   eventBus: IEventBus;
   scheduler: Scheduler;
-  config: typeof env;
+  config: typeof config;
   logging: LoggingService;
   registerModule(module: Module): Promise<void>;
   onShutdown(handler: () => Promise<void> | void): void;
@@ -32,7 +32,7 @@ export function createRuntime(): Runtime {
   const runtime: Runtime = {
     eventBus,
     scheduler,
-    config: env,
+    config: config,
     logging,
 
     async registerModule(module: Module) {
@@ -63,11 +63,11 @@ export function createRuntime(): Runtime {
     name: 'log-rotation',
     schedule: '0 0 * * *',
     execute: async () => {
-      rotateLogs(env.LOG.HOT_ROTATE, env.LOG.COLD_ROTATE);
+      rotateLogs(config.log.hotRotate, config.log.coldRotate);
     },
   });
 
-  rotateLogs(env.LOG.HOT_ROTATE, env.LOG.COLD_ROTATE);
+  rotateLogs(config.log.hotRotate, config.log.coldRotate);
 
   return runtime;
 }

@@ -16,9 +16,9 @@ export function createLlmModule(): ModuleHandle<LlmModule> {
     },
 
     register(runtime: Runtime) {
-      const { API_KEY, MODEL_NAME } = runtime.config.LLM;
+      const { apiKey, modelName } = runtime.config.llm;
 
-      const geminiAdapter = new GeminiAdapter(API_KEY, MODEL_NAME);
+      const geminiAdapter = new GeminiAdapter(apiKey, modelName);
       const generateUseCase = new GenerateResponseUseCase(geminiAdapter);
 
       service = {
