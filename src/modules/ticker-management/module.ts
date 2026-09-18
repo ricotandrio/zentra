@@ -3,7 +3,7 @@ import { AddTickerUseCase } from './application/usecases/add-ticker.usecase';
 import { RemoveTickerUseCase } from './application/usecases/remove-ticker.usecase';
 import { GetTickersUseCase } from './application/usecases/get-tickers.usecase';
 import { initDatabase } from './infrastructure/db/database';
-import { Module, Runtime } from '@/shared/runtime';
+import { ModuleHandle, Runtime } from '@/shared/runtime';
 import Database from 'better-sqlite3';
 
 export interface TickerManagementModule {
@@ -12,22 +12,26 @@ export interface TickerManagementModule {
   getTickersUseCase: GetTickersUseCase;
 }
 
-export function createTickerManagementModule(): Module {
+export function createTickerManagementModule(): ModuleHandle<TickerManagementModule> {
   let db: Database.Database | null = null;
+  let service: TickerManagementModule | null = null;
 
   return {
-    register(runtime: Runtime) {
+    getService() {
+      if (!service) throw new Error('Ticker management module is not registered');
+      return service;
+    },
+
+    register(_runtime: Runtime) {
       db = initDatabase();
 
       const repository = new SqliteTickerRepository(db);
 
-      const tickerManagement: TickerManagementModule = {
+      service = {
         addTickerUseCase: new AddTickerUseCase(repository),
         removeTickerUseCase: new RemoveTickerUseCase(repository),
         getTickersUseCase: new GetTickersUseCase(repository),
       };
-
-      runtime.modules.set('tickerManagement', tickerManagement);
     },
 
     shutdown() {

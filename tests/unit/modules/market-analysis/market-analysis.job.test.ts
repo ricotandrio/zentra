@@ -1,10 +1,11 @@
 import { MarketAnalysisJob } from '@/modules/market-analysis/job';
-import { TickerManagementModule } from '@/modules/ticker-management';
 import { IEventBus } from '@/shared/event-bus';
 
 describe('MarketAnalysisJob', () => {
   let mockEventBus: IEventBus;
-  let mockTickerManagementModule: Partial<TickerManagementModule>;
+  let mockTickerReader: { getTickers: jest.Mock };
+  let mockAnalyzeTickersUseCase: { execute: jest.Mock };
+  let mockMarketSummaryUseCase: { execute: jest.Mock };
 
   beforeEach(() => {
     // Mock event bus
@@ -14,15 +15,9 @@ describe('MarketAnalysisJob', () => {
       clear: jest.fn(),
     } as any;
 
-    // Mock ticker management module
-    mockTickerManagementModule = {
-      getTickersUseCase: {
-        execute: jest.fn(),
-      } as any,
-      addTickerUseCase: {} as any,
-      removeTickerUseCase: {} as any,
-      closeDb: jest.fn(),
-    };
+    mockTickerReader = { getTickers: jest.fn() };
+    mockAnalyzeTickersUseCase = { execute: jest.fn() };
+    mockMarketSummaryUseCase = { execute: jest.fn() };
 
     jest.clearAllMocks();
   });
@@ -30,12 +25,14 @@ describe('MarketAnalysisJob', () => {
   describe('execute', () => {
     it('should log and skip when no tickers are available', async () => {
       // Arrange
-      (mockTickerManagementModule.getTickersUseCase!.execute as jest.Mock).mockResolvedValue([]);
+      mockTickerReader.getTickers.mockResolvedValue([]);
 
       const job = new MarketAnalysisJob({
         channelId: 'test-channel',
         eventBus: mockEventBus,
-        tickerManagementModule: mockTickerManagementModule as TickerManagementModule,
+        tickerReader: mockTickerReader,
+        analyzeTickersUseCase: mockAnalyzeTickersUseCase as any,
+        marketSummaryUseCase: mockMarketSummaryUseCase as any,
       });
 
       // Act
@@ -48,14 +45,14 @@ describe('MarketAnalysisJob', () => {
     it('should publish error event on failure', async () => {
       // Arrange
       const testError = new Error('Database error');
-      (mockTickerManagementModule.getTickersUseCase!.execute as jest.Mock).mockRejectedValue(
-        testError
-      );
+      mockTickerReader.getTickers.mockRejectedValue(testError);
 
       const job = new MarketAnalysisJob({
         channelId: 'test-channel',
         eventBus: mockEventBus,
-        tickerManagementModule: mockTickerManagementModule as TickerManagementModule,
+        tickerReader: mockTickerReader,
+        analyzeTickersUseCase: mockAnalyzeTickersUseCase as any,
+        marketSummaryUseCase: mockMarketSummaryUseCase as any,
       });
 
       // Act & Assert

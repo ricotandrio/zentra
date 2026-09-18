@@ -1,37 +1,51 @@
 import { Module, Runtime } from '@/shared/runtime';
-import { TickerManagementModule } from '@/modules/ticker-management';
-import { MarketAnalysisJob } from './job';
+import { AnalyzeTickersUseCase } from './application/usecases/analyze-tickers.usecase';
+import { MarketSummaryUseCase } from './application/usecases/market-summary.usecase';
+import { MarketDataPort, MarketSummaryPort, TickerReaderPort } from './application/contracts';
+import { MarketAnalysisJob, MarketAnalysisJobDependencies } from './job';
 import { MarketAnalysisSubscriber } from './subscriber';
 
-export function createMarketAnalysisModule(): Module {
+export interface MarketAnalysisDependencies {
+  tickerReader: TickerReaderPort;
+  marketData: MarketDataPort;
+  marketSummary: MarketSummaryPort;
+}
+
+export function createMarketAnalysisModule(dependencies: MarketAnalysisDependencies): Module {
   let unsubscribeFunctions: Array<() => void> = [];
+  const analyzeTickersUseCase = new AnalyzeTickersUseCase(dependencies.marketData);
+  const marketSummaryUseCase = new MarketSummaryUseCase(dependencies.marketSummary);
 
   return {
-    register(runtime: Runtime) {
+    async register(runtime: Runtime) {
       const channelId = runtime.config.DISCORD.DISCORD_STANDUP_CHANNEL_ID;
-      const tickerManagement = runtime.modules.get('tickerManagement') as TickerManagementModule;
+      await dependencies.marketSummary.initialize?.();
 
-      const job = new MarketAnalysisJob({
+      const jobDependencies: MarketAnalysisJobDependencies = {
         eventBus: runtime.eventBus,
         channelId,
-        tickerManagementModule: tickerManagement,
-        traceId: '',
-      });
+        tickerReader: dependencies.tickerReader,
+        analyzeTickersUseCase,
+        marketSummaryUseCase,
+      };
+
+      const job = new MarketAnalysisJob(jobDependencies);
       runtime.scheduler.register(job);
 
       const subscriber = new MarketAnalysisSubscriber(
         runtime.eventBus,
         channelId,
-        tickerManagement
+        jobDependencies
       );
       const { unsubscribeComplete, unsubscribeError, unsubscribeTrigger } = subscriber.subscribe();
       unsubscribeFunctions = [unsubscribeComplete, unsubscribeError, unsubscribeTrigger];
     },
 
-    shutdown() {
+    async shutdown() {
       for (const unsub of unsubscribeFunctions) {
         unsub();
       }
+      await dependencies.marketSummary.close?.();
     },
   };
 }

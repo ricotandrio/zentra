@@ -1,5 +1,4 @@
 import { MarketAnalysisScheduler } from '@/modules/market-analysis/scheduler';
-import { TickerManagementModule } from '@/modules/ticker-management';
 import { IEventBus } from '@/shared/event-bus';
 
 // Mock node-cron module
@@ -13,7 +12,9 @@ const mockSchedule = cron.schedule as jest.MockedFunction<typeof cron.schedule>;
 
 describe('MarketAnalysisScheduler', () => {
   let mockEventBus: IEventBus;
-  let mockTickerManagementModule: Partial<TickerManagementModule>;
+  let mockTickerReader: { getTickers: jest.Mock };
+  let mockAnalyzeTickersUseCase: { execute: jest.Mock };
+  let mockMarketSummaryUseCase: { execute: jest.Mock };
   let mockScheduledTask: any;
 
   beforeEach(() => {
@@ -24,15 +25,9 @@ describe('MarketAnalysisScheduler', () => {
       clear: jest.fn(),
     } as any;
 
-    // Mock ticker management module
-    mockTickerManagementModule = {
-      getTickersUseCase: {
-        execute: jest.fn(),
-      } as any,
-      addTickerUseCase: {} as any,
-      removeTickerUseCase: {} as any,
-      closeDb: jest.fn(),
-    };
+    mockTickerReader = { getTickers: jest.fn() };
+    mockAnalyzeTickersUseCase = { execute: jest.fn() };
+    mockMarketSummaryUseCase = { execute: jest.fn() };
 
     // Mock scheduled task
     mockScheduledTask = {
@@ -54,7 +49,9 @@ describe('MarketAnalysisScheduler', () => {
       const scheduler = new MarketAnalysisScheduler({
         channelId: 'test-channel',
         eventBus: mockEventBus,
-        tickerManagementModule: mockTickerManagementModule as TickerManagementModule,
+        tickerReader: mockTickerReader,
+        analyzeTickersUseCase: mockAnalyzeTickersUseCase as any,
+        marketSummaryUseCase: mockMarketSummaryUseCase as any,
       });
 
       // Act
@@ -73,7 +70,9 @@ describe('MarketAnalysisScheduler', () => {
       const scheduler = new MarketAnalysisScheduler({
         channelId: 'test-channel',
         eventBus: mockEventBus,
-        tickerManagementModule: mockTickerManagementModule as TickerManagementModule,
+        tickerReader: mockTickerReader,
+        analyzeTickersUseCase: mockAnalyzeTickersUseCase as any,
+        marketSummaryUseCase: mockMarketSummaryUseCase as any,
         schedule: customSchedule,
       });
 
@@ -92,7 +91,9 @@ describe('MarketAnalysisScheduler', () => {
       const scheduler = new MarketAnalysisScheduler({
         channelId: 'test-channel',
         eventBus: mockEventBus,
-        tickerManagementModule: mockTickerManagementModule as TickerManagementModule,
+        tickerReader: mockTickerReader,
+        analyzeTickersUseCase: mockAnalyzeTickersUseCase as any,
+        marketSummaryUseCase: mockMarketSummaryUseCase as any,
       });
 
       // Act & Assert
@@ -109,7 +110,9 @@ describe('MarketAnalysisScheduler', () => {
       const scheduler = new MarketAnalysisScheduler({
         channelId: 'test-channel',
         eventBus: mockEventBus,
-        tickerManagementModule: mockTickerManagementModule as TickerManagementModule,
+        tickerReader: mockTickerReader,
+        analyzeTickersUseCase: mockAnalyzeTickersUseCase as any,
+        marketSummaryUseCase: mockMarketSummaryUseCase as any,
       });
 
       scheduler.start();
@@ -126,7 +129,9 @@ describe('MarketAnalysisScheduler', () => {
       const scheduler = new MarketAnalysisScheduler({
         channelId: 'test-channel',
         eventBus: mockEventBus,
-        tickerManagementModule: mockTickerManagementModule as TickerManagementModule,
+        tickerReader: mockTickerReader,
+        analyzeTickersUseCase: mockAnalyzeTickersUseCase as any,
+        marketSummaryUseCase: mockMarketSummaryUseCase as any,
       });
 
       // Act
@@ -145,7 +150,9 @@ describe('MarketAnalysisScheduler', () => {
       const scheduler = new MarketAnalysisScheduler({
         channelId: 'test-channel',
         eventBus: mockEventBus,
-        tickerManagementModule: mockTickerManagementModule as TickerManagementModule,
+        tickerReader: mockTickerReader,
+        analyzeTickersUseCase: mockAnalyzeTickersUseCase as any,
+        marketSummaryUseCase: mockMarketSummaryUseCase as any,
       });
 
       // Act & Assert - should not throw
@@ -157,7 +164,9 @@ describe('MarketAnalysisScheduler', () => {
       const scheduler = new MarketAnalysisScheduler({
         channelId: 'test-channel',
         eventBus: mockEventBus,
-        tickerManagementModule: mockTickerManagementModule as TickerManagementModule,
+        tickerReader: mockTickerReader,
+        analyzeTickersUseCase: mockAnalyzeTickersUseCase as any,
+        marketSummaryUseCase: mockMarketSummaryUseCase as any,
       });
 
       // Act & Assert

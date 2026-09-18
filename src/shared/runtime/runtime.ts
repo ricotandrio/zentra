@@ -9,12 +9,15 @@ export interface Module {
   shutdown?(): Promise<void> | void;
 }
 
+export interface ModuleHandle<T> extends Module {
+  getService(): T;
+}
+
 export interface Runtime {
   eventBus: IEventBus;
   scheduler: Scheduler;
   config: typeof env;
   logging: LoggingService;
-  modules: Map<string, unknown>;
   registerModule(module: Module): Promise<void>;
   onShutdown(handler: () => Promise<void> | void): void;
   shutdown(): Promise<void>;
@@ -31,7 +34,6 @@ export function createRuntime(): Runtime {
     scheduler,
     config: env,
     logging,
-    modules: new Map(),
 
     async registerModule(module: Module) {
       await module.register(runtime);

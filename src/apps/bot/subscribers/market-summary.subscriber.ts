@@ -1,8 +1,8 @@
 import { Client as DiscordClient } from 'discord.js';
 import { logging } from '@/shared/logger';
 import { IEventBus } from '@/shared/event-bus';
-import { MarketSummaryDiscordResultUseCase } from '@/modules/market-analysis/application/usecases/market-summary-discord-result.usecase';
-import { MarketSummary } from '@/modules/market-analysis/infrastructure/data-sources';
+import { MarketSummaryDiscordResultUseCase } from '@/apps/bot/presenters/market-summary.presenter';
+import { MarketSummary } from '@/modules/market-analysis/application/contracts';
 
 /**
  * Subscribe to market summary events from the worker

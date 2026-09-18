@@ -1,15 +1,20 @@
 import { IEventBus, MarketAnalysisCompleteEvent, MarketAnalysisErrorEvent, MarketSummaryCompleteEvent } from '@/shared/event-bus';
-import { TickerManagementModule } from '@/modules/ticker-management';
 import { AnalyzeTickersUseCase } from './application/usecases/analyze-tickers.usecase';
 import { MarketSummaryUseCase } from './application/usecases/market-summary.usecase';
+import { TickerReaderPort } from './application/contracts';
 import { SchedulerJob } from '@/shared/scheduler/scheduler.types';
 import { convertCronScheduleHour, Utc } from '@/shared/utils';
 import { logging } from '@/shared/logger';
 
-interface MarketAnalysisJobConfig {
+export interface MarketAnalysisJobDependencies {
   channelId: string;
   eventBus: IEventBus;
-  tickerManagementModule: TickerManagementModule;
+  tickerReader: TickerReaderPort;
+  analyzeTickersUseCase: AnalyzeTickersUseCase;
+  marketSummaryUseCase: MarketSummaryUseCase;
+}
+
+interface MarketAnalysisJobConfig extends MarketAnalysisJobDependencies {
   traceId?: string;
 }
 
@@ -20,14 +25,14 @@ export class MarketAnalysisJob implements SchedulerJob {
   constructor(private config: MarketAnalysisJobConfig) {}
 
   async execute(): Promise<void> {
-    const { traceId, tickerManagementModule } = this.config;
+    const { traceId, tickerReader } = this.config;
 
     const traceIdForThisRun = traceId || `market-analysis-${Date.now()}`;
 
     try {
       logging.marketAnalysis.jobStarted({ traceId: traceIdForThisRun });
 
-      const tickers = await tickerManagementModule.getTickersUseCase.execute();
+      const tickers = await tickerReader.getTickers();
 
       if (!tickers || tickers.length === 0) {
         logging.marketAnalysis.noTickers({ traceId: traceIdForThisRun });
@@ -65,14 +70,13 @@ export class MarketAnalysisJob implements SchedulerJob {
    * Analyze tickers and publish market analysis complete event
    */
   private async analyzeTickersAndPublish(tickers: any[], traceId: string): Promise<void> {
-    const { channelId, eventBus } = this.config;
+    const { channelId, eventBus, analyzeTickersUseCase } = this.config;
 
-    const analyzeUseCase = new AnalyzeTickersUseCase();
     const tickerSymbols = tickers.map((t) => t.symbol);
 
     logging.marketAnalysis.tickersAnalyzed({ tickerCount: tickerSymbols.length });
 
-    const analyses = await analyzeUseCase.execute(tickerSymbols);
+    const analyses = await analyzeTickersUseCase.execute(tickerSymbols);
 
     const results = analyses.map((analysis) => ({
       ticker: analysis.quote.ticker,
@@ -117,11 +121,10 @@ export class MarketAnalysisJob implements SchedulerJob {
    * Fetch market summary and publish market summary event
    */
   private async publishMarketSummary(traceId: string): Promise<void> {
-    const { channelId, eventBus } = this.config;
+    const { channelId, eventBus, marketSummaryUseCase } = this.config;
 
     try {
       logging.marketAnalysis.summaryFetching();
-      const marketSummaryUseCase = new MarketSummaryUseCase();
       const marketSummary = await marketSummaryUseCase.execute();
 
       // Publish market summary event

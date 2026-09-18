@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { Module, Runtime } from '@/shared/runtime';
+import { ModuleHandle, Runtime } from '@/shared/runtime';
 import { PostgresAdapter } from './infrastructure/postgres/postgres.adapter';
 import { PostgresScheduledQueryRepository } from './infrastructure/postgres/scheduled-query.repository';
 import { ListQueriesUseCase } from './application/use-cases/list-queries.usecase';
@@ -10,10 +10,16 @@ export interface ScheduledQueriesModule {
   executeQueryUseCase: ExecuteQueryUseCase;
 }
 
-export function createScheduledQueriesModule(): Module {
+export function createScheduledQueriesModule(): ModuleHandle<ScheduledQueriesModule> {
   let pool: Pool | null = null;
+  let service: ScheduledQueriesModule | null = null;
 
   return {
+    getService() {
+      if (!service) throw new Error('Scheduled queries module is not registered');
+      return service;
+    },
+
     async register(runtime: Runtime) {
       const connectionString = runtime.config.POSTGRESQL.URL;
 
@@ -36,12 +42,10 @@ export function createScheduledQueriesModule(): Module {
       const queryExecutor = new PostgresAdapter(connectionString);
       const queryRepository = new PostgresScheduledQueryRepository(pool);
 
-      const scheduledQueries: ScheduledQueriesModule = {
+      service = {
         listQueriesUseCase: new ListQueriesUseCase(queryRepository),
         executeQueryUseCase: new ExecuteQueryUseCase(queryRepository, queryExecutor),
       };
-
-      runtime.modules.set('scheduledQueries', scheduledQueries);
     },
 
     async shutdown() {

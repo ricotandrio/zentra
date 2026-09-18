@@ -4,23 +4,46 @@ import { startBot } from '@/apps/bot';
 import { createTickerManagementModule } from '@/modules/ticker-management';
 import { createMarketAnalysisModule } from '@/modules/market-analysis';
 import { createLlmModule } from '@/modules/llm';
-import { createContentSummaryModule, ContentSummaryModule } from '@/modules/content-summary';
+import { createContentSummaryModule } from '@/modules/content-summary';
 import { createScheduledQueriesModule } from '@/modules/scheduled-queries';
+import { YahooMarketDataAdapter } from '@/modules/market-analysis/infrastructure/yahoo';
+import { MarketScraperAdapter } from '@/modules/market-analysis/infrastructure/data-sources';
 import { logging } from '@/shared/logger';
 import { generateTraceId } from '@/shared/utils';
 
 (async () => {
   const runtime = createRuntime();
 
-  await runtime.registerModule(createTickerManagementModule());
-  await runtime.registerModule(createMarketAnalysisModule());
+  const tickerManagementHandle = createTickerManagementModule();
+  await runtime.registerModule(tickerManagementHandle);
+  const tickerManagement = tickerManagementHandle.getService();
 
-  await runtime.registerModule(createLlmModule());
-  await runtime.registerModule(createContentSummaryModule());
-  await runtime.registerModule(createScheduledQueriesModule());
+  await runtime.registerModule(createMarketAnalysisModule({
+    tickerReader: {
+      getTickers: () => tickerManagement.getTickersUseCase.execute(),
+    },
+    marketData: new YahooMarketDataAdapter(),
+    marketSummary: new MarketScraperAdapter(),
+  }));
 
-  const contentSummaryModule = runtime.modules.get('contentSummary') as ContentSummaryModule | undefined;
-  await startBot(runtime, contentSummaryModule);
+  const llmHandle = createLlmModule();
+  await runtime.registerModule(llmHandle);
+  const llm = llmHandle.getService();
+
+  const contentSummaryHandle = createContentSummaryModule(llm);
+  await runtime.registerModule(contentSummaryHandle);
+  const contentSummary = contentSummaryHandle.getService();
+
+  const scheduledQueriesHandle = createScheduledQueriesModule();
+  await runtime.registerModule(scheduledQueriesHandle);
+  const scheduledQueries = scheduledQueriesHandle.getService();
+
+  await startBot(runtime, {
+    llm,
+    tickerManagement,
+    contentSummary,
+    scheduledQueries,
+  });
 
   registerHeartbeatJob(runtime);
 

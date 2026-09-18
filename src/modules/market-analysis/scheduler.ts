@@ -1,7 +1,9 @@
 import cron from 'node-cron';
 import { MarketAnalysisJob } from './job';
 import { IEventBus } from '@/shared/event-bus';
-import { TickerManagementModule } from '@/modules/ticker-management';
+import { AnalyzeTickersUseCase } from './application/usecases/analyze-tickers.usecase';
+import { MarketSummaryUseCase } from './application/usecases/market-summary.usecase';
+import { TickerReaderPort } from './application/contracts';
 import { logging } from '@/shared/logger';
 import { generateTraceId } from '@/shared/utils';
 
@@ -18,8 +20,9 @@ interface SchedulerConfig {
   /** Optional cron schedule string (default: '0 18 * * *' for daily at 6 PM UTC+0) */
   schedule?: string;
 
-  /** Ticker management module for handling ticker-related operations */
-  tickerManagementModule: TickerManagementModule;
+  tickerReader: TickerReaderPort;
+  analyzeTickersUseCase: AnalyzeTickersUseCase;
+  marketSummaryUseCase: MarketSummaryUseCase;
 }
 
 export class MarketAnalysisScheduler {

@@ -129,6 +129,8 @@ Database
 | **Application** | Use cases, orchestration, coordination | Depends on domain ports, not implementations |
 | **Infrastructure** | External services, adapters, repository implementations | All I/O, SDK calls, database access |
 
+Feature modules keep feature-specific infrastructure inside the module. Application code must depend on ports defined in `application/contracts`, while bootstrap supplies the concrete infrastructure adapters. Shared infrastructure belongs outside a feature module only when multiple modules genuinely consume it.
+
 ### Integration Points
 
 | Component | Type | Event Types Published |

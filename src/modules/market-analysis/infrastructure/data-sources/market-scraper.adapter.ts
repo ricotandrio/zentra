@@ -3,11 +3,12 @@ import { MarketTickerData, MarketApiResponse } from './market-scraper.types';
 import { logging } from '@/shared/logger';
 import { MARKET_SUMMARY_URL } from '@/shared/config';
 import { MarketSummary } from './market-scraper.types';
+import { MarketSummaryPort } from '../../application/contracts';
 import { isoDateToLocaleString } from '../../../../shared/utils/function';
 
 const MARKET_DATA_URL = MARKET_SUMMARY_URL;
 
-export class MarketScraperAdapter {
+export class MarketScraperAdapter implements MarketSummaryPort {
   private browser: Browser | null = null;
   private page: Page | null = null;
 

@@ -5,6 +5,7 @@ import {
   SentimentResult,
   MarketAnalysis,
 } from './yahoo.types';
+import { MarketDataPort } from '../../application/contracts';
 
 const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
@@ -159,4 +160,10 @@ export async function analyzeMarket(ticker: string): Promise<MarketAnalysis> {
 
 export async function analyzeMultipleTickers(tickers: string[]): Promise<MarketAnalysis[]> {
   return Promise.all(tickers.map((ticker) => analyzeMarket(ticker)));
+}
+
+export class YahooMarketDataAdapter implements MarketDataPort {
+  analyzeMultipleTickers(tickers: string[]): Promise<MarketAnalysis[]> {
+    return analyzeMultipleTickers(tickers);
+  }
 }

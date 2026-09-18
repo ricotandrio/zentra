@@ -2,7 +2,7 @@ import { Client as DiscordClient, EmbedBuilder } from 'discord.js';
 import { logging } from '@/shared/logger';
 import { IEventBus, MarketAnalysisCompleteEvent, MarketAnalysisErrorEvent } from '@/shared/event-bus';
 import { WorkerWebhookPayload } from '@/modules/market-analysis/contracts/market-results.dto';
-import { AnalyzeTickersDiscordResultUseCase } from '@/modules/market-analysis/application/usecases/analyze-tickers-discord-result.usecase';
+import { AnalyzeTickersDiscordResultUseCase } from '@/apps/bot/presenters/market-analysis.presenter';
 
 /**
  * Subscribe to market analysis events from the worker

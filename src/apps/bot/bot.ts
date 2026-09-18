@@ -33,6 +33,13 @@ export interface BotCommand extends BotCommandWithDeps {
   execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
 }
 
+export interface BotDependencies {
+  llm: LlmModule;
+  tickerManagement: TickerManagementModule;
+  contentSummary: ContentSummaryModule;
+  scheduledQueries: ScheduledQueriesModule;
+}
+
 const allBotCommands: Record<string, BotCommandWithDeps> = {
   ping: ping as BotCommand,
   'add-ticker': addTicker as BotCommandWithDeps,
@@ -104,9 +111,7 @@ export const deployBot = async (
 const registerHandlers = (
   client: Client,
   runtime: Runtime,
-  tickerManagementModule?: TickerManagementModule,
-  contentSummaryModule?: ContentSummaryModule,
-  scheduledQueriesModule?: ScheduledQueriesModule
+  dependencies: BotDependencies
 ) => {
   const enabledCommands = getEnabledCommands(runtime);
 
@@ -124,8 +129,7 @@ const registerHandlers = (
       return;
     }
 
-    const llmModule = runtime.modules.get('llm') as LlmModule | undefined;
-    await handleNaturalLanguageMessage(message, llmModule);
+    await handleNaturalLanguageMessage(message, dependencies.llm);
   });
 
   client.on('interactionCreate', async (interaction) => {
@@ -135,7 +139,13 @@ const registerHandlers = (
     if (!command) return;
 
     try {
-      await command.execute(interaction, runtime.eventBus, tickerManagementModule, contentSummaryModule, scheduledQueriesModule);
+      await command.execute(
+        interaction,
+        runtime.eventBus,
+        dependencies.tickerManagement,
+        dependencies.contentSummary,
+        dependencies.scheduledQueries
+      );
     } catch (error) {
       runtime.logging.bot.commandFailed({ commandName: interaction.commandName, error });
       const errorMessage = '❌ An unexpected error occurred while executing this command.';
@@ -161,10 +171,8 @@ const registerHandlers = (
 
 export const startBot = async (
   runtime: Runtime,
-  contentSummaryModule?: ContentSummaryModule
+  dependencies: BotDependencies
 ): Promise<void> => {
-  const tickerManagement = runtime.modules.get('tickerManagement') as TickerManagementModule | undefined;
-  const scheduledQueries = runtime.modules.get('scheduledQueries') as ScheduledQueriesModule | undefined;
   const { BOT_TOKEN, CLIENT_ID, GUILD_ID } = runtime.config.DISCORD;
 
   const client = new Client({
@@ -180,7 +188,7 @@ export const startBot = async (
 
   await deployBot(rest, CLIENT_ID, GUILD_ID, runtime);
 
-  registerHandlers(client, runtime, tickerManagement, contentSummaryModule, scheduledQueries);
+  registerHandlers(client, runtime, dependencies);
 
   registerMarketAnalysisSubscriber(client, runtime.eventBus);
   registerMarketSummarySubscriber(client, runtime.eventBus);

@@ -1,7 +1,8 @@
-import { MarketAnalysis } from '@/modules/market-analysis/infrastructure/yahoo/yahoo.types';
-import { analyzeMultipleTickers } from '@/modules/market-analysis/infrastructure/yahoo/yahoo.adapter';
+import { MarketAnalysis, MarketDataPort } from '../contracts';
 
 export class AnalyzeTickersUseCase {
+  constructor(private readonly marketData: MarketDataPort) {}
+
   async execute(symbols: string[]): Promise<MarketAnalysis[]> {
     if (symbols.length === 0) {
       throw new Error('No tickers provided');
@@ -12,7 +13,7 @@ export class AnalyzeTickersUseCase {
     }
 
     try {
-      return await analyzeMultipleTickers(symbols);
+      return await this.marketData.analyzeMultipleTickers(symbols);
     } catch (error) {
       // eslint-disable-next-line preserve-caught-error
       throw new Error(

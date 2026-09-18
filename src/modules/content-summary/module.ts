@@ -1,4 +1,4 @@
-import { Module, Runtime } from '@/shared/runtime';
+import { ModuleHandle, Runtime } from '@/shared/runtime';
 import { LlmModule } from '@/modules/llm';
 import { WebScraperAdapter } from './infrastructure/web-scraper.adapter';
 import { SummarizeContentUseCase } from './application/usecases/summarize-content.usecase';
@@ -7,25 +7,25 @@ export interface ContentSummaryModule {
   summarize: SummarizeContentUseCase;
 }
 
-export function createContentSummaryModule(): Module {
+export function createContentSummaryModule(llmModule: LlmModule): ModuleHandle<ContentSummaryModule> {
   const scraperAdapter = new WebScraperAdapter();
+  let service: ContentSummaryModule | null = null;
 
   return {
+    getService() {
+      if (!service) throw new Error('Content summary module is not registered');
+      return service;
+    },
+
     register(runtime: Runtime) {
-      const llmModule = runtime.modules.get('llm') as LlmModule | undefined;
-
-      if (!llmModule) {
-        throw new Error('LLM module must be registered before the content-summary module');
-      }
-
       const summarizeUseCase = new SummarizeContentUseCase(
         scraperAdapter,
         llmModule.generate
       );
 
-      runtime.modules.set('contentSummary', {
+      service = {
         summarize: summarizeUseCase,
-      } satisfies ContentSummaryModule);
+      };
 
       runtime.logging.contentSummary.moduleInit();
     },

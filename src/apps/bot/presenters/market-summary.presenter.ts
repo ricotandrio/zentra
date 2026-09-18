@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-import { MarketSummary } from '@/modules/market-analysis/infrastructure/data-sources';
+import { MarketSummary } from '@/modules/market-analysis/application/contracts';
 
 /**
  * Market Summary Discord Result Use Case

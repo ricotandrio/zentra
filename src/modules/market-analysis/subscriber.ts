@@ -1,6 +1,5 @@
 import { IEventBus, MarketAnalysisCompleteEvent, MarketAnalysisErrorEvent, WorkerMarketAnalysisTriggerEvent } from '@/shared/event-bus';
-import { MarketAnalysisJob } from './job';
-import { TickerManagementModule } from '@/modules/ticker-management';
+import { MarketAnalysisJob, MarketAnalysisJobDependencies } from './job';
 import { logging } from '@/shared/logger';
 
 /**
@@ -12,7 +11,7 @@ export class MarketAnalysisSubscriber {
   constructor(
     private eventBus: IEventBus, 
     private channelId: string,
-    private tickerManagementModule: TickerManagementModule
+    private jobDependencies: Omit<MarketAnalysisJobDependencies, 'channelId' | 'eventBus'>
   ) {}
 
   /**
@@ -47,7 +46,7 @@ export class MarketAnalysisSubscriber {
     const job = new MarketAnalysisJob({
       eventBus: this.eventBus,
       channelId: this.channelId,
-      tickerManagementModule: this.tickerManagementModule,
+      ...this.jobDependencies,
       traceId: event.traceId,
     });
     await job.execute();
